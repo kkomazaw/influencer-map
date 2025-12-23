@@ -6,6 +6,8 @@ export interface Member {
   department?: string
   position?: string
   avatarUrl?: string
+  centralityScore?: number  // 中心性スコア（計算後に設定）
+  communityId?: string      // 所属コミュニティID（分析後に設定）
   createdAt: Date
   updatedAt: Date
 }
