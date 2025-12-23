@@ -19,7 +19,16 @@ export class MemberController {
   async getById(req: Request, res: Response) {
     try {
       const { id } = req.params
-      const member = await memberService.getMemberById(id)
+      const mapId = req.query.mapId as string
+
+      if (!mapId) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'mapId query parameter is required' },
+        })
+      }
+
+      const member = await memberService.getMemberById(mapId, id)
 
       if (!member) {
         return res.status(404).json({
@@ -58,7 +67,16 @@ export class MemberController {
     try {
       const { id } = req.params
       const input: UpdateMemberInput = req.body
-      const member = await memberService.updateMember(id, input)
+      const mapId = req.query.mapId as string
+
+      if (!mapId) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'mapId query parameter is required' },
+        })
+      }
+
+      const member = await memberService.updateMember(mapId, id, input)
 
       if (!member) {
         return res.status(404).json({
@@ -82,7 +100,16 @@ export class MemberController {
   async delete(req: Request, res: Response) {
     try {
       const { id } = req.params
-      const success = await memberService.deleteMember(id)
+      const mapId = req.query.mapId as string
+
+      if (!mapId) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'mapId query parameter is required' },
+        })
+      }
+
+      const success = await memberService.deleteMember(mapId, id)
 
       if (!success) {
         return res.status(404).json({

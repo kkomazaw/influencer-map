@@ -1,41 +1,49 @@
 import { Member, CreateMemberInput, UpdateMemberInput } from '@shared/types'
-import { storage } from '../models/InMemoryStorage.js'
-import { v4 as uuidv4 } from 'uuid'
+import { memberRepository, relationshipRepository } from '../repositories'
 
 export class MemberService {
   async getAllMembers(mapId?: string): Promise<Member[]> {
-    if (mapId) {
-      return storage.getMembersByMapId(mapId)
+    if (!mapId) {
+      throw new Error('mapId is required')
     }
-    return storage.getAllMembers()
+    return memberRepository.findByMapId(mapId)
   }
 
-  async getMemberById(id: string): Promise<Member | null> {
-    const member = storage.getMemberById(id)
-    return member || null
+  async getMemberById(mapId: string, id: string): Promise<Member | null> {
+    return memberRepository.findById(mapId, id)
+  }
+
+  async getMembersByDepartment(mapId: string, department: string): Promise<Member[]> {
+    return memberRepository.findByDepartment(mapId, department)
+  }
+
+  async searchMembersByName(mapId: string, query: string): Promise<Member[]> {
+    return memberRepository.searchByName(mapId, query)
   }
 
   async createMember(input: CreateMemberInput): Promise<Member> {
-    const member: Member = {
-      id: uuidv4(),
-      ...input,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+    return memberRepository.create(input.mapId, input)
+  }
+
+  async updateMember(mapId: string, id: string, input: UpdateMemberInput): Promise<Member | null> {
+    try {
+      return await memberRepository.update(mapId, id, input)
+    } catch (error) {
+      return null
     }
-    return storage.createMember(member)
   }
 
-  async updateMember(id: string, input: UpdateMemberInput): Promise<Member | null> {
-    const updated = storage.updateMember(id, input)
-    return updated || null
-  }
+  async deleteMember(mapId: string, id: string): Promise<boolean> {
+    try {
+      // Delete associated relationships (cascade)
+      await relationshipRepository.deleteByMemberId(mapId, id)
 
-  async deleteMember(id: string): Promise<boolean> {
-    // Delete associated relationships
-    const relationships = storage.getRelationshipsByMemberId(id)
-    relationships.forEach((rel) => storage.deleteRelationship(rel.id))
-
-    return storage.deleteMember(id)
+      // Delete member
+      await memberRepository.delete(mapId, id)
+      return true
+    } catch (error) {
+      return false
+    }
   }
 }
 

@@ -1,33 +1,37 @@
 import { Map, CreateMapInput, UpdateMapInput } from '@shared/types'
-import { storage } from '../models/InMemoryStorage'
-import { randomUUID } from 'crypto'
+import { mapRepository } from '../repositories'
 
 export const mapService = {
   async getAllMaps(): Promise<Map[]> {
-    return storage.getAllMaps()
+    return mapRepository.findAll()
   },
 
   async getMapById(id: string): Promise<Map | null> {
-    const map = storage.getMapById(id)
-    return map || null
+    return mapRepository.findById(id)
+  },
+
+  async getMapsByOwnerId(ownerId: string): Promise<Map[]> {
+    return mapRepository.findByOwnerId(ownerId)
   },
 
   async createMap(input: CreateMapInput): Promise<Map> {
-    const map: Map = {
-      id: randomUUID(),
-      ...input,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
-    return storage.createMap(map)
+    return mapRepository.create(input)
   },
 
   async updateMap(id: string, input: UpdateMapInput): Promise<Map | null> {
-    const map = storage.updateMap(id, input)
-    return map || null
+    try {
+      return await mapRepository.update(id, input)
+    } catch (error) {
+      return null
+    }
   },
 
   async deleteMap(id: string): Promise<boolean> {
-    return storage.deleteMap(id)
+    try {
+      await mapRepository.delete(id)
+      return true
+    } catch (error) {
+      return false
+    }
   },
 }

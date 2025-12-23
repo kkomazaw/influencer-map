@@ -1,62 +1,64 @@
 import { Group, CreateGroupInput, UpdateGroupInput } from '@shared/types'
-import { storage } from '../models/InMemoryStorage.js'
-import { v4 as uuidv4 } from 'uuid'
+import { groupRepository, memberRepository } from '../repositories'
 
 export class GroupService {
   async getAllGroups(mapId?: string): Promise<Group[]> {
-    if (mapId) {
-      return storage.getGroupsByMapId(mapId)
+    if (!mapId) {
+      throw new Error('mapId is required')
     }
-    return storage.getAllGroups()
+    return groupRepository.findByMapId(mapId)
   }
 
-  async getGroupById(id: string): Promise<Group | null> {
-    const group = storage.getGroupById(id)
-    return group || null
+  async getGroupById(mapId: string, id: string): Promise<Group | null> {
+    return groupRepository.findById(mapId, id)
+  }
+
+  async getGroupsByMemberId(mapId: string, memberId: string): Promise<Group[]> {
+    return groupRepository.findByMemberId(mapId, memberId)
   }
 
   async createGroup(input: CreateGroupInput): Promise<Group> {
     // Validate that all member IDs exist
     if (input.memberIds && input.memberIds.length > 0) {
       for (const memberId of input.memberIds) {
-        const member = storage.getMemberById(memberId)
+        const member = await memberRepository.findById(input.mapId, memberId)
         if (!member) {
           throw new Error(`Member with ID ${memberId} not found`)
         }
       }
     }
 
-    const group: Group = {
-      id: uuidv4(),
-      mapId: input.mapId,
-      name: input.name,
-      description: input.description,
-      memberIds: input.memberIds || [],
+    return groupRepository.create(input.mapId, {
+      ...input,
       color: input.color || '#4CAF50',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
-
-    return storage.createGroup(group)
+    })
   }
 
-  async updateGroup(id: string, input: UpdateGroupInput): Promise<Group | null> {
+  async updateGroup(mapId: string, id: string, input: UpdateGroupInput): Promise<Group | null> {
     // Validate that all member IDs exist if memberIds is being updated
     if (input.memberIds && input.memberIds.length > 0) {
       for (const memberId of input.memberIds) {
-        const member = storage.getMemberById(memberId)
+        const member = await memberRepository.findById(mapId, memberId)
         if (!member) {
           throw new Error(`Member with ID ${memberId} not found`)
         }
       }
     }
 
-    const updated = storage.updateGroup(id, input)
-    return updated || null
+    try {
+      return await groupRepository.update(mapId, id, input)
+    } catch (error) {
+      return null
+    }
   }
 
-  async deleteGroup(id: string): Promise<boolean> {
-    return storage.deleteGroup(id)
+  async deleteGroup(mapId: string, id: string): Promise<boolean> {
+    try {
+      await groupRepository.delete(mapId, id)
+      return true
+    } catch (error) {
+      return false
+    }
   }
 }
 
