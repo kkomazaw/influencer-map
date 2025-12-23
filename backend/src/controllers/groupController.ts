@@ -19,7 +19,16 @@ export class GroupController {
   async getById(req: Request, res: Response) {
     try {
       const { id } = req.params
-      const group = await groupService.getGroupById(id)
+      const mapId = req.query.mapId as string
+
+      if (!mapId) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'mapId query parameter is required' },
+        })
+      }
+
+      const group = await groupService.getGroupById(mapId, id)
 
       if (!group) {
         return res.status(404).json({
@@ -58,7 +67,16 @@ export class GroupController {
     try {
       const { id } = req.params
       const input: UpdateGroupInput = req.body
-      const group = await groupService.updateGroup(id, input)
+      const mapId = req.query.mapId as string
+
+      if (!mapId) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'mapId query parameter is required' },
+        })
+      }
+
+      const group = await groupService.updateGroup(mapId, id, input)
 
       if (!group) {
         return res.status(404).json({
@@ -82,7 +100,16 @@ export class GroupController {
   async delete(req: Request, res: Response) {
     try {
       const { id } = req.params
-      const success = await groupService.deleteGroup(id)
+      const mapId = req.query.mapId as string
+
+      if (!mapId) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'mapId query parameter is required' },
+        })
+      }
+
+      const success = await groupService.deleteGroup(mapId, id)
 
       if (!success) {
         return res.status(404).json({

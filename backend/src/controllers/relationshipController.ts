@@ -19,7 +19,16 @@ export class RelationshipController {
   async getById(req: Request, res: Response) {
     try {
       const { id } = req.params
-      const relationship = await relationshipService.getRelationshipById(id)
+      const mapId = req.query.mapId as string
+
+      if (!mapId) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'mapId query parameter is required' },
+        })
+      }
+
+      const relationship = await relationshipService.getRelationshipById(mapId, id)
 
       if (!relationship) {
         return res.status(404).json({
@@ -40,7 +49,16 @@ export class RelationshipController {
   async getByMemberId(req: Request, res: Response) {
     try {
       const { memberId } = req.params
-      const relationships = await relationshipService.getRelationshipsByMemberId(memberId)
+      const mapId = req.query.mapId as string
+
+      if (!mapId) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'mapId query parameter is required' },
+        })
+      }
+
+      const relationships = await relationshipService.getRelationshipsBySourceId(mapId, memberId)
       res.json({ success: true, data: relationships })
     } catch (error) {
       res.status(500).json({
@@ -71,7 +89,16 @@ export class RelationshipController {
     try {
       const { id } = req.params
       const input: UpdateRelationshipInput = req.body
-      const relationship = await relationshipService.updateRelationship(id, input)
+      const mapId = req.query.mapId as string
+
+      if (!mapId) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'mapId query parameter is required' },
+        })
+      }
+
+      const relationship = await relationshipService.updateRelationship(mapId, id, input)
 
       if (!relationship) {
         return res.status(404).json({
@@ -95,7 +122,16 @@ export class RelationshipController {
   async delete(req: Request, res: Response) {
     try {
       const { id } = req.params
-      const success = await relationshipService.deleteRelationship(id)
+      const mapId = req.query.mapId as string
+
+      if (!mapId) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'mapId query parameter is required' },
+        })
+      }
+
+      const success = await relationshipService.deleteRelationship(mapId, id)
 
       if (!success) {
         return res.status(404).json({
