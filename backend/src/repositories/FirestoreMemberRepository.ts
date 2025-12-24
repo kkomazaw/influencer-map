@@ -8,6 +8,7 @@ import { db } from '../config/firebase'
 import { IMemberRepository } from './interfaces'
 import { Member, CreateMemberInput, UpdateMemberInput } from '@shared/types'
 import { Timestamp } from 'firebase-admin/firestore'
+import { removeUndefinedValues } from './utils'
 
 export class FirestoreMemberRepository implements IMemberRepository {
   /**
@@ -37,11 +38,14 @@ export class FirestoreMemberRepository implements IMemberRepository {
       updatedAt: now.toDate(),
     }
 
-    await docRef.set({
+    // undefined値を除外してFirestoreに保存
+    const firestoreData = removeUndefinedValues({
       ...member,
       createdAt: now,
       updatedAt: now,
     })
+
+    await docRef.set(firestoreData)
 
     return member
   }
@@ -115,10 +119,11 @@ export class FirestoreMemberRepository implements IMemberRepository {
       throw new Error(`Member with id ${id} not found in map ${mapId}`)
     }
 
-    const updateData: any = {
+    // undefined値を除外してFirestoreに保存
+    const updateData = removeUndefinedValues({
       ...data,
       updatedAt: Timestamp.now(),
-    }
+    })
 
     await docRef.update(updateData)
 

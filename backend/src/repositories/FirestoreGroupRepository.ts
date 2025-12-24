@@ -8,6 +8,7 @@ import { db } from '../config/firebase'
 import { IGroupRepository } from './interfaces'
 import { Group, CreateGroupInput, UpdateGroupInput } from '@shared/types'
 import { Timestamp } from 'firebase-admin/firestore'
+import { removeUndefinedValues } from './utils'
 
 export class FirestoreGroupRepository implements IGroupRepository {
   /**
@@ -36,11 +37,14 @@ export class FirestoreGroupRepository implements IGroupRepository {
       updatedAt: now.toDate(),
     }
 
-    await docRef.set({
+    // undefined値を除外してFirestoreに保存
+    const firestoreData = removeUndefinedValues({
       ...group,
       createdAt: now,
       updatedAt: now,
     })
+
+    await docRef.set(firestoreData)
 
     return group
   }
@@ -89,10 +93,11 @@ export class FirestoreGroupRepository implements IGroupRepository {
       throw new Error(`Group with id ${id} not found in map ${mapId}`)
     }
 
-    const updateData: any = {
+    // undefined値を除外してFirestoreに保存
+    const updateData = removeUndefinedValues({
       ...data,
       updatedAt: Timestamp.now(),
-    }
+    })
 
     await docRef.update(updateData)
 

@@ -40,6 +40,9 @@ try {
 // Firestore instance
 export const db = admin.firestore()
 
+// Firestoreの設定：undefined値を無視
+db.settings({ ignoreUndefinedProperties: true })
+
 // Firebase Auth instance
 export const auth = admin.auth()
 

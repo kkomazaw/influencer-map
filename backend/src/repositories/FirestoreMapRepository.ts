@@ -8,6 +8,7 @@ import { db } from '../config/firebase'
 import { IMapRepository } from './interfaces'
 import { Map, CreateMapInput, UpdateMapInput } from '@shared/types'
 import { Timestamp } from 'firebase-admin/firestore'
+import { removeUndefinedValues } from './utils'
 
 export class FirestoreMapRepository implements IMapRepository {
   private readonly collectionName = 'maps'
@@ -29,11 +30,24 @@ export class FirestoreMapRepository implements IMapRepository {
       updatedAt: now.toDate(),
     }
 
-    await docRef.set({
-      ...map,
+    // undefined値を除外してFirestoreに保存
+    const firestoreData: any = {
+      id: docRef.id,
+      name: data.name,
+      ownerId: data.ownerId,
       createdAt: now,
       updatedAt: now,
-    })
+    }
+
+    // オプショナルフィールドは値が存在する場合のみ追加
+    if (data.description !== undefined) {
+      firestoreData.description = data.description
+    }
+    if (data.thumbnail !== undefined) {
+      firestoreData.thumbnail = data.thumbnail
+    }
+
+    await docRef.set(firestoreData)
 
     return map
   }
@@ -119,10 +133,11 @@ export class FirestoreMapRepository implements IMapRepository {
       throw new Error(`Map with id ${id} not found`)
     }
 
-    const updateData: any = {
+    // undefined値を除外してFirestoreに保存
+    const updateData = removeUndefinedValues({
       ...data,
       updatedAt: Timestamp.now(),
-    }
+    })
 
     await docRef.update(updateData)
 

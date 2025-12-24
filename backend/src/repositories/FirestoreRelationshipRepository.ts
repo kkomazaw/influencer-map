@@ -8,6 +8,7 @@ import { db } from '../config/firebase'
 import { IRelationshipRepository } from './interfaces'
 import { Relationship, CreateRelationshipInput, UpdateRelationshipInput } from '@shared/types'
 import { Timestamp } from 'firebase-admin/firestore'
+import { removeUndefinedValues } from './utils'
 
 export class FirestoreRelationshipRepository implements IRelationshipRepository {
   /**
@@ -37,11 +38,14 @@ export class FirestoreRelationshipRepository implements IRelationshipRepository 
       updatedAt: now.toDate(),
     }
 
-    await docRef.set({
+    // undefined値を除外してFirestoreに保存
+    const firestoreData = removeUndefinedValues({
       ...relationship,
       createdAt: now,
       updatedAt: now,
     })
+
+    await docRef.set(firestoreData)
 
     return relationship
   }
@@ -116,10 +120,11 @@ export class FirestoreRelationshipRepository implements IRelationshipRepository 
       throw new Error(`Relationship with id ${id} not found in map ${mapId}`)
     }
 
-    const updateData: any = {
+    // undefined値を除外してFirestoreに保存
+    const updateData = removeUndefinedValues({
       ...data,
       updatedAt: Timestamp.now(),
-    }
+    })
 
     await docRef.update(updateData)
 
