@@ -1,7 +1,11 @@
 import { Router } from 'express'
 import { groupController } from '../controllers/groupController.js'
+import { authenticate } from '../middleware/auth'
 
 const router = Router()
+
+// 全ルートに認証を適用
+router.use(authenticate)
 
 router.get('/', (req, res) => groupController.getAll(req, res))
 router.get('/:id', (req, res) => groupController.getById(req, res))

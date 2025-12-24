@@ -24,6 +24,42 @@ const api = axios.create({
   },
 })
 
+// トークン取得関数（AuthContextから設定される）
+let getAuthToken: (() => Promise<string | null>) | null = null
+
+export const setAuthTokenGetter = (getter: () => Promise<string | null>) => {
+  getAuthToken = getter
+}
+
+// リクエストインターセプター: 認証トークンをヘッダーに追加
+api.interceptors.request.use(
+  async (config) => {
+    if (getAuthToken) {
+      const token = await getAuthToken()
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
+
+// レスポンスインターセプター: 401エラー処理
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      console.error('Authentication error: Token invalid or expired')
+      // トークンが無効な場合はログアウトさせる
+      // ここでは単にエラーを返すが、実装によってはログアウト処理を追加
+    }
+    return Promise.reject(error)
+  }
+)
+
 // Members API
 export const membersApi = {
   getAll: async (mapId?: string): Promise<Member[]> => {
