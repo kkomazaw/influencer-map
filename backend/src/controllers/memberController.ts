@@ -1,11 +1,47 @@
-import { Request, Response } from 'express'
+import { Response } from 'express'
 import { memberService } from '../services/memberService.js'
 import { CreateMemberInput, UpdateMemberInput } from '@shared/types'
+import { AuthRequest } from '../middleware/auth'
+import { mapService } from '../services/mapService'
 
 export class MemberController {
-  async getAll(req: Request, res: Response) {
+  // Helper method to verify map ownership
+  private async verifyMapOwnership(
+    mapId: string,
+    userId: string
+  ): Promise<{ authorized: boolean; error?: string }> {
+    const map = await mapService.getMapById(mapId)
+
+    if (!map) {
+      return { authorized: false, error: 'Map not found' }
+    }
+
+    if (map.ownerId !== userId) {
+      return { authorized: false, error: 'Forbidden: You do not own this map' }
+    }
+
+    return { authorized: true }
+  }
+  async getAll(req: AuthRequest, res: Response) {
     try {
+      const userId = req.user?.uid
+      if (!userId) {
+        return res.status(401).json({ success: false, error: { message: 'Unauthorized' } })
+      }
+
       const mapId = req.query.mapId as string | undefined
+
+      // If mapId is provided, verify ownership
+      if (mapId) {
+        const { authorized, error } = await this.verifyMapOwnership(mapId, userId)
+        if (!authorized) {
+          return res.status(error === 'Map not found' ? 404 : 403).json({
+            success: false,
+            error: { message: error },
+          })
+        }
+      }
+
       const members = await memberService.getAllMembers(mapId)
       res.json({ success: true, data: members })
     } catch (error) {
@@ -16,8 +52,13 @@ export class MemberController {
     }
   }
 
-  async getById(req: Request, res: Response) {
+  async getById(req: AuthRequest, res: Response) {
     try {
+      const userId = req.user?.uid
+      if (!userId) {
+        return res.status(401).json({ success: false, error: { message: 'Unauthorized' } })
+      }
+
       const { id } = req.params
       const mapId = req.query.mapId as string
 
@@ -25,6 +66,15 @@ export class MemberController {
         return res.status(400).json({
           success: false,
           error: { message: 'mapId query parameter is required' },
+        })
+      }
+
+      // Verify map ownership
+      const { authorized, error } = await this.verifyMapOwnership(mapId, userId)
+      if (!authorized) {
+        return res.status(error === 'Map not found' ? 404 : 403).json({
+          success: false,
+          error: { message: error },
         })
       }
 
@@ -46,9 +96,31 @@ export class MemberController {
     }
   }
 
-  async create(req: Request, res: Response) {
+  async create(req: AuthRequest, res: Response) {
     try {
+      const userId = req.user?.uid
+      if (!userId) {
+        return res.status(401).json({ success: false, error: { message: 'Unauthorized' } })
+      }
+
       const input: CreateMemberInput = req.body
+
+      // Verify map ownership
+      if (!input.mapId) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'mapId is required in request body' },
+        })
+      }
+
+      const { authorized, error } = await this.verifyMapOwnership(input.mapId, userId)
+      if (!authorized) {
+        return res.status(error === 'Map not found' ? 404 : 403).json({
+          success: false,
+          error: { message: error },
+        })
+      }
+
       const member = await memberService.createMember(input)
 
       // Emit socket event
@@ -63,8 +135,13 @@ export class MemberController {
     }
   }
 
-  async update(req: Request, res: Response) {
+  async update(req: AuthRequest, res: Response) {
     try {
+      const userId = req.user?.uid
+      if (!userId) {
+        return res.status(401).json({ success: false, error: { message: 'Unauthorized' } })
+      }
+
       const { id } = req.params
       const input: UpdateMemberInput = req.body
       const mapId = req.query.mapId as string
@@ -73,6 +150,15 @@ export class MemberController {
         return res.status(400).json({
           success: false,
           error: { message: 'mapId query parameter is required' },
+        })
+      }
+
+      // Verify map ownership
+      const { authorized, error } = await this.verifyMapOwnership(mapId, userId)
+      if (!authorized) {
+        return res.status(error === 'Map not found' ? 404 : 403).json({
+          success: false,
+          error: { message: error },
         })
       }
 
@@ -97,8 +183,13 @@ export class MemberController {
     }
   }
 
-  async delete(req: Request, res: Response) {
+  async delete(req: AuthRequest, res: Response) {
     try {
+      const userId = req.user?.uid
+      if (!userId) {
+        return res.status(401).json({ success: false, error: { message: 'Unauthorized' } })
+      }
+
       const { id } = req.params
       const mapId = req.query.mapId as string
 
@@ -106,6 +197,15 @@ export class MemberController {
         return res.status(400).json({
           success: false,
           error: { message: 'mapId query parameter is required' },
+        })
+      }
+
+      // Verify map ownership
+      const { authorized, error } = await this.verifyMapOwnership(mapId, userId)
+      if (!authorized) {
+        return res.status(error === 'Map not found' ? 404 : 403).json({
+          success: false,
+          error: { message: error },
         })
       }
 
