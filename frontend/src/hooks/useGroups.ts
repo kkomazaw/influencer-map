@@ -24,15 +24,20 @@ export const useGroups = (mapId?: string) => {
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, input }: { id: string; input: UpdateGroupInput }) =>
-      groupsApi.update(id, input),
+    mutationFn: ({ id, input }: { id: string; input: UpdateGroupInput }) => {
+      if (!mapId) throw new Error('mapId is required')
+      return groupsApi.update(id, input, mapId)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['groups', mapId] })
     },
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => groupsApi.delete(id),
+    mutationFn: (id: string) => {
+      if (!mapId) throw new Error('mapId is required')
+      return groupsApi.delete(id, mapId)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['groups', mapId] })
     },

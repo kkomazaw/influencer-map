@@ -24,15 +24,20 @@ export const useRelationships = (mapId?: string) => {
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, input }: { id: string; input: UpdateRelationshipInput }) =>
-      relationshipsApi.update(id, input),
+    mutationFn: ({ id, input }: { id: string; input: UpdateRelationshipInput }) => {
+      if (!mapId) throw new Error('mapId is required')
+      return relationshipsApi.update(id, input, mapId)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['relationships', mapId] })
     },
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => relationshipsApi.delete(id),
+    mutationFn: (id: string) => {
+      if (!mapId) throw new Error('mapId is required')
+      return relationshipsApi.delete(id, mapId)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['relationships', mapId] })
     },

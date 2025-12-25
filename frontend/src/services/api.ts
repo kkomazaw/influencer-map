@@ -105,8 +105,10 @@ export const membersApi = {
     return response.data.data || []
   },
 
-  getById: async (id: string): Promise<Member> => {
-    const response = await api.get<ApiResponse<Member>>(`/members/${id}`)
+  getById: async (id: string, mapId: string): Promise<Member> => {
+    const response = await api.get<ApiResponse<Member>>(`/members/${id}`, {
+      params: { mapId },
+    })
     if (!response.data.data) throw new Error('Member not found')
     return response.data.data
   },
@@ -117,14 +119,16 @@ export const membersApi = {
     return response.data.data
   },
 
-  update: async (id: string, input: UpdateMemberInput): Promise<Member> => {
-    const response = await api.put<ApiResponse<Member>>(`/members/${id}`, input)
+  update: async (id: string, input: UpdateMemberInput, mapId: string): Promise<Member> => {
+    const response = await api.put<ApiResponse<Member>>(`/members/${id}`, input, {
+      params: { mapId },
+    })
     if (!response.data.data) throw new Error('Failed to update member')
     return response.data.data
   },
 
-  delete: async (id: string): Promise<void> => {
-    await api.delete(`/members/${id}`)
+  delete: async (id: string, mapId: string): Promise<void> => {
+    await api.delete(`/members/${id}`, { params: { mapId } })
   },
 }
 
@@ -136,15 +140,18 @@ export const relationshipsApi = {
     return response.data.data || []
   },
 
-  getById: async (id: string): Promise<Relationship> => {
-    const response = await api.get<ApiResponse<Relationship>>(`/relationships/${id}`)
+  getById: async (id: string, mapId: string): Promise<Relationship> => {
+    const response = await api.get<ApiResponse<Relationship>>(`/relationships/${id}`, {
+      params: { mapId },
+    })
     if (!response.data.data) throw new Error('Relationship not found')
     return response.data.data
   },
 
-  getByMemberId: async (memberId: string): Promise<Relationship[]> => {
+  getByMemberId: async (memberId: string, mapId: string): Promise<Relationship[]> => {
     const response = await api.get<ApiResponse<Relationship[]>>(
-      `/relationships/member/${memberId}`
+      `/relationships/member/${memberId}`,
+      { params: { mapId } }
     )
     return response.data.data || []
   },
@@ -155,14 +162,20 @@ export const relationshipsApi = {
     return response.data.data
   },
 
-  update: async (id: string, input: UpdateRelationshipInput): Promise<Relationship> => {
-    const response = await api.put<ApiResponse<Relationship>>(`/relationships/${id}`, input)
+  update: async (
+    id: string,
+    input: UpdateRelationshipInput,
+    mapId: string
+  ): Promise<Relationship> => {
+    const response = await api.put<ApiResponse<Relationship>>(`/relationships/${id}`, input, {
+      params: { mapId },
+    })
     if (!response.data.data) throw new Error('Failed to update relationship')
     return response.data.data
   },
 
-  delete: async (id: string): Promise<void> => {
-    await api.delete(`/relationships/${id}`)
+  delete: async (id: string, mapId: string): Promise<void> => {
+    await api.delete(`/relationships/${id}`, { params: { mapId } })
   },
 }
 
@@ -174,8 +187,10 @@ export const groupsApi = {
     return response.data.data || []
   },
 
-  getById: async (id: string): Promise<Group> => {
-    const response = await api.get<ApiResponse<Group>>(`/groups/${id}`)
+  getById: async (id: string, mapId: string): Promise<Group> => {
+    const response = await api.get<ApiResponse<Group>>(`/groups/${id}`, {
+      params: { mapId },
+    })
     if (!response.data.data) throw new Error('Group not found')
     return response.data.data
   },
@@ -186,14 +201,16 @@ export const groupsApi = {
     return response.data.data
   },
 
-  update: async (id: string, input: UpdateGroupInput): Promise<Group> => {
-    const response = await api.put<ApiResponse<Group>>(`/groups/${id}`, input)
+  update: async (id: string, input: UpdateGroupInput, mapId: string): Promise<Group> => {
+    const response = await api.put<ApiResponse<Group>>(`/groups/${id}`, input, {
+      params: { mapId },
+    })
     if (!response.data.data) throw new Error('Failed to update group')
     return response.data.data
   },
 
-  delete: async (id: string): Promise<void> => {
-    await api.delete(`/groups/${id}`)
+  delete: async (id: string, mapId: string): Promise<void> => {
+    await api.delete(`/groups/${id}`, { params: { mapId } })
   },
 }
 
