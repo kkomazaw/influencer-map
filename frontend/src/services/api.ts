@@ -163,23 +163,26 @@ export const groupsApi = {
 // Maps API
 export const mapsApi = {
   getAll: async (): Promise<Map[]> => {
-    const response = await api.get<Map[]>('/maps')
-    return response.data
+    const response = await api.get<ApiResponse<Map[]>>('/maps')
+    return response.data.data || []
   },
 
   getById: async (id: string): Promise<Map> => {
-    const response = await api.get<Map>(`/maps/${id}`)
-    return response.data
+    const response = await api.get<ApiResponse<Map>>(`/maps/${id}`)
+    if (!response.data.data) throw new Error('Map not found')
+    return response.data.data
   },
 
   create: async (input: CreateMapInput): Promise<Map> => {
-    const response = await api.post<Map>('/maps', input)
-    return response.data
+    const response = await api.post<ApiResponse<Map>>('/maps', input)
+    if (!response.data.data) throw new Error('Failed to create map')
+    return response.data.data
   },
 
   update: async (id: string, input: UpdateMapInput): Promise<Map> => {
-    const response = await api.put<Map>(`/maps/${id}`, input)
-    return response.data
+    const response = await api.put<ApiResponse<Map>>(`/maps/${id}`, input)
+    if (!response.data.data) throw new Error('Failed to update map')
+    return response.data.data
   },
 
   delete: async (id: string): Promise<void> => {

@@ -10,14 +10,20 @@ export const mapController = {
       // 認証されたユーザーのマップのみ取得
       const userId = req.user?.uid
       if (!userId) {
-        return res.status(401).json({ error: 'Unauthorized' })
+        return res.status(401).json({
+          success: false,
+          error: { message: 'Unauthorized' },
+        })
       }
 
       const maps = await mapService.getMapsByOwnerId(userId)
-      res.json(maps)
+      res.json({ success: true, data: maps })
     } catch (error) {
       console.error('Error getting maps:', error)
-      res.status(500).json({ error: 'Failed to get maps' })
+      res.status(500).json({
+        success: false,
+        error: { message: 'Failed to get maps', details: error },
+      })
     }
   },
 
@@ -27,24 +33,36 @@ export const mapController = {
       const userId = req.user?.uid
 
       if (!userId) {
-        return res.status(401).json({ error: 'Unauthorized' })
+        return res.status(401).json({
+          success: false,
+          error: { message: 'Unauthorized' },
+        })
       }
 
       const map = await mapService.getMapById(id)
 
       if (!map) {
-        return res.status(404).json({ error: 'Map not found' })
+        return res.status(404).json({
+          success: false,
+          error: { message: 'Map not found' },
+        })
       }
 
       // 所有者チェック
       if (map.ownerId !== userId) {
-        return res.status(403).json({ error: 'Forbidden: You do not own this map' })
+        return res.status(403).json({
+          success: false,
+          error: { message: 'Forbidden: You do not own this map' },
+        })
       }
 
-      res.json(map)
+      res.json({ success: true, data: map })
     } catch (error) {
       console.error('Error getting map:', error)
-      res.status(500).json({ error: 'Failed to get map' })
+      res.status(500).json({
+        success: false,
+        error: { message: 'Failed to get map', details: error },
+      })
     }
   },
 
@@ -53,7 +71,10 @@ export const mapController = {
       const userId = req.user?.uid
 
       if (!userId) {
-        return res.status(401).json({ error: 'Unauthorized' })
+        return res.status(401).json({
+          success: false,
+          error: { message: 'Unauthorized' },
+        })
       }
 
       // ownerIdを認証ユーザーから自動設定
@@ -67,10 +88,13 @@ export const mapController = {
       // Emit real-time event
       io.emit('map:created', map)
 
-      res.status(201).json(map)
+      res.status(201).json({ success: true, data: map })
     } catch (error) {
       console.error('Error creating map:', error)
-      res.status(500).json({ error: 'Failed to create map' })
+      res.status(500).json({
+        success: false,
+        error: { message: 'Failed to create map', details: error },
+      })
     }
   },
 
@@ -80,18 +104,27 @@ export const mapController = {
       const userId = req.user?.uid
 
       if (!userId) {
-        return res.status(401).json({ error: 'Unauthorized' })
+        return res.status(401).json({
+          success: false,
+          error: { message: 'Unauthorized' },
+        })
       }
 
       // まず既存のマップを取得して所有者チェック
       const existingMap = await mapService.getMapById(id)
 
       if (!existingMap) {
-        return res.status(404).json({ error: 'Map not found' })
+        return res.status(404).json({
+          success: false,
+          error: { message: 'Map not found' },
+        })
       }
 
       if (existingMap.ownerId !== userId) {
-        return res.status(403).json({ error: 'Forbidden: You do not own this map' })
+        return res.status(403).json({
+          success: false,
+          error: { message: 'Forbidden: You do not own this map' },
+        })
       }
 
       const input: UpdateMapInput = req.body
@@ -100,10 +133,13 @@ export const mapController = {
       // Emit real-time event
       io.emit('map:updated', map)
 
-      res.json(map)
+      res.json({ success: true, data: map })
     } catch (error) {
       console.error('Error updating map:', error)
-      res.status(500).json({ error: 'Failed to update map' })
+      res.status(500).json({
+        success: false,
+        error: { message: 'Failed to update map', details: error },
+      })
     }
   },
 
@@ -113,18 +149,27 @@ export const mapController = {
       const userId = req.user?.uid
 
       if (!userId) {
-        return res.status(401).json({ error: 'Unauthorized' })
+        return res.status(401).json({
+          success: false,
+          error: { message: 'Unauthorized' },
+        })
       }
 
       // まず既存のマップを取得して所有者チェック
       const existingMap = await mapService.getMapById(id)
 
       if (!existingMap) {
-        return res.status(404).json({ error: 'Map not found' })
+        return res.status(404).json({
+          success: false,
+          error: { message: 'Map not found' },
+        })
       }
 
       if (existingMap.ownerId !== userId) {
-        return res.status(403).json({ error: 'Forbidden: You do not own this map' })
+        return res.status(403).json({
+          success: false,
+          error: { message: 'Forbidden: You do not own this map' },
+        })
       }
 
       const success = await mapService.deleteMap(id)
@@ -135,7 +180,10 @@ export const mapController = {
       res.status(204).send()
     } catch (error) {
       console.error('Error deleting map:', error)
-      res.status(500).json({ error: 'Failed to delete map' })
+      res.status(500).json({
+        success: false,
+        error: { message: 'Failed to delete map', details: error },
+      })
     }
   },
 }
