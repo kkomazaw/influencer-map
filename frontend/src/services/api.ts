@@ -47,16 +47,53 @@ api.interceptors.request.use(
   }
 )
 
-// レスポンスインターセプター: 401エラー処理
+// エラーメッセージ抽出ヘルパー
+const extractErrorMessage = (error: any): string => {
+  // APIレスポンスからエラーメッセージを抽出
+  if (error.response?.data?.error?.message) {
+    return error.response.data.error.message
+  }
+  if (error.response?.data?.message) {
+    return error.response.data.message
+  }
+  if (error.message) {
+    return error.message
+  }
+  return 'An unexpected error occurred'
+}
+
+// レスポンスインターセプター: エラー処理
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      console.error('Authentication error: Token invalid or expired')
-      // トークンが無効な場合はログアウトさせる
-      // ここでは単にエラーを返すが、実装によってはログアウト処理を追加
+    const status = error.response?.status
+    const errorMessage = extractErrorMessage(error)
+
+    // ステータスコードに応じたエラーハンドリング
+    switch (status) {
+      case 401:
+        console.error('Authentication error:', errorMessage)
+        // トークンが無効な場合、ページをリロードして再ログインを促す
+        // AuthContextでonAuthStateChangedが発火し、ログインページにリダイレクトされる
+        if (errorMessage.includes('Token invalid or expired')) {
+          window.location.reload()
+        }
+        break
+      case 403:
+        console.error('Authorization error:', errorMessage)
+        break
+      case 404:
+        console.error('Resource not found:', errorMessage)
+        break
+      case 500:
+        console.error('Server error:', errorMessage)
+        break
+      default:
+        console.error('API error:', errorMessage)
     }
-    return Promise.reject(error)
+
+    // エラーメッセージを含めて reject
+    return Promise.reject(new Error(errorMessage))
   }
 )
 
