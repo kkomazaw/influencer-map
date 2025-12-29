@@ -10,6 +10,7 @@ import CommunityPanel from '../components/CommunityPanel'
 import CentralityPanel from '../components/CentralityPanel'
 import IsolatedMembersPanel from '../components/IsolatedMembersPanel'
 import StatisticsPanel from '../components/StatisticsPanel'
+import MemberDetailStats from '../components/MemberDetailStats'
 import { useMembers } from '../hooks/useMembers'
 import { useRelationships } from '../hooks/useRelationships'
 import { useGroups } from '../hooks/useGroups'
@@ -130,6 +131,27 @@ const Dashboard: React.FC = () => {
             colorMode={colorMode}
             onNodeClick={handleNodeClick}
           />
+          {selectedMemberId && (
+            <div className="member-detail-overlay">
+              <div className="member-detail-panel">
+                <button
+                  className="close-button"
+                  onClick={() => setSelectedMemberId(null)}
+                >
+                  ✕
+                </button>
+                <MemberDetailStats
+                  member={members.find((m) => m.id === selectedMemberId)!}
+                  relationships={relationships}
+                  community={communities.find((c) => c.memberIds.includes(selectedMemberId))}
+                  centralityScore={centralityResult?.scores.find(
+                    (s) => s.memberId === selectedMemberId
+                  )}
+                  onRelatedMemberClick={setSelectedMemberId}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <aside className="sidebar">

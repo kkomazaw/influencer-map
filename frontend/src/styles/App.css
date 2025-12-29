@@ -987,3 +987,243 @@
   font-weight: bold;
   margin-right: 0.5rem;
 }
+
+/* =================================
+   Member Detail Stats Styles
+   ================================= */
+
+.member-detail-stats {
+  padding: 1.5rem;
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+.member-detail-header {
+  margin-bottom: 1.5rem;
+}
+
+.member-detail-header h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.25rem;
+  color: #4CAF50;
+}
+
+.member-meta {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  padding: 0.25rem 0.75rem;
+  background-color: #4CAF50;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.badge.secondary {
+  background-color: #2196F3;
+}
+
+.detail-section {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: #2a2a2a;
+  border-radius: 4px;
+}
+
+.detail-section h4 {
+  margin: 0 0 1rem 0;
+  font-size: 0.875rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-card-small {
+  background-color: #1e1e1e;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.stat-value-small {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.stat-list-item-small {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.375rem 0.5rem;
+  background-color: #1e1e1e;
+  border-radius: 4px;
+  margin-bottom: 0.375rem;
+}
+
+.community-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: #1e1e1e;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.community-info-text {
+  font-size: 0.875rem;
+  color: #888;
+  padding-left: 0.5rem;
+}
+
+.centrality-scores {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.centrality-score-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.centrality-label {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.centrality-bar-container {
+  height: 8px;
+  background-color: #1e1e1e;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.centrality-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #4CAF50, #8BC34A);
+  transition: width 0.3s ease;
+}
+
+.centrality-value {
+  font-size: 0.875rem;
+  color: #4CAF50;
+  font-weight: bold;
+  align-self: flex-end;
+}
+
+.connected-members {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.connected-member-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background-color: #1e1e1e;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.connected-member-item:hover {
+  background-color: #333;
+}
+
+.connection-direction {
+  font-size: 1rem;
+  color: #4CAF50;
+  font-weight: bold;
+  min-width: 20px;
+  text-align: center;
+}
+
+.connection-type {
+  flex: 1;
+  font-size: 0.875rem;
+  color: #ccc;
+}
+
+.connection-strength {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.more-connections {
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #888;
+  font-style: italic;
+}
+
+/* =================================
+   Member Detail Overlay Styles
+   ================================= */
+
+.member-detail-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 100;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.member-detail-panel {
+  width: 400px;
+  background-color: #1a1a1a;
+  border-left: 1px solid #333;
+  overflow-y: auto;
+  position: relative;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.close-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  line-height: 1;
+  transition: color 0.2s;
+  z-index: 10;
+}
+
+.close-button:hover {
+  color: #ff5722;
+}
