@@ -7,7 +7,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Community, CommunityDetectionResult } from '@shared/types'
 import { communityApi } from '../services/api'
-import { handleApiError } from '../utils/errorHandling'
 
 /**
  * コミュニティ一覧を取得するフック
@@ -57,7 +56,7 @@ export function useRefreshCommunities(mapId: string) {
       queryClient.invalidateQueries({ queryKey: ['community-stats', mapId] })
     },
     onError: (error) => {
-      handleApiError(error, 'Failed to refresh communities')
+      console.error('Failed to refresh communities:', error)
     },
   })
 }
@@ -81,7 +80,7 @@ export function useUpdateCommunity(mapId: string) {
       queryClient.setQueryData(['community', mapId, updatedCommunity.id], updatedCommunity)
     },
     onError: (error) => {
-      handleApiError(error, 'Failed to update community')
+      console.error('Failed to update community:', error)
     },
   })
 }
@@ -106,7 +105,7 @@ export function useDeleteCommunity(mapId: string) {
       queryClient.removeQueries({ queryKey: ['community', mapId, deletedId] })
     },
     onError: (error) => {
-      handleApiError(error, 'Failed to delete community')
+      console.error('Failed to delete community:', error)
     },
   })
 }

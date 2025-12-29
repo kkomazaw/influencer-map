@@ -6,6 +6,7 @@ import MemberList from '../components/MemberList'
 import RelationshipForm from '../components/RelationshipForm'
 import GroupForm from '../components/GroupForm'
 import GroupList from '../components/GroupList'
+import CommunityPanel from '../components/CommunityPanel'
 import { useMembers } from '../hooks/useMembers'
 import { useRelationships } from '../hooks/useRelationships'
 import { useGroups } from '../hooks/useGroups'
@@ -16,7 +17,7 @@ import { Member, Group, Relationship } from '@shared/types'
 const Dashboard: React.FC = () => {
   const { mapId } = useParams<{ mapId: string }>()
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'members' | 'relationships' | 'groups'>('members')
+  const [activeTab, setActiveTab] = useState<'members' | 'relationships' | 'groups' | 'communities'>('members')
   const [editingMember, setEditingMember] = useState<Member | null>(null)
   const [editingGroup, setEditingGroup] = useState<Group | null>(null)
   const { members, isLoading: membersLoading, createMember, updateMember: updateMemberApi, deleteMember, isCreating, isUpdating } = useMembers(mapId)
@@ -132,6 +133,12 @@ const Dashboard: React.FC = () => {
             >
               グループ
             </button>
+            <button
+              className={`tab ${activeTab === 'communities' ? 'active' : ''}`}
+              onClick={() => setActiveTab('communities')}
+            >
+              コミュニティ
+            </button>
           </div>
 
           <div className="tab-content">
@@ -239,6 +246,10 @@ const Dashboard: React.FC = () => {
                   onGroupDelete={deleteGroup}
                 />
               </div>
+            )}
+
+            {activeTab === 'communities' && (
+              <CommunityPanel mapId={mapId} members={members} />
             )}
           </div>
         </aside>
