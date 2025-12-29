@@ -63,6 +63,47 @@
 .graph-container {
   flex: 1;
   background-color: #1e1e1e;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.graph-controls {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 10;
+  background-color: rgba(26, 26, 26, 0.9);
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #333;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.graph-controls label {
+  font-size: 0.875rem;
+  color: #888;
+}
+
+.graph-controls select {
+  padding: 0.5rem;
+  background-color: #2a2a2a;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  outline: none;
+}
+
+.graph-controls select:hover {
+  border-color: #4CAF50;
+}
+
+.graph-controls select:focus {
+  border-color: #4CAF50;
 }
 
 .sidebar {

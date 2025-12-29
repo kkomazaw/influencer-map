@@ -4,9 +4,10 @@ import { useCalculateCentrality } from '../hooks/useCentrality'
 
 interface CentralityPanelProps {
   mapId: string
+  onAnalysisComplete?: (result: CentralityAnalysisResult) => void
 }
 
-const CentralityPanel: React.FC<CentralityPanelProps> = ({ mapId }) => {
+const CentralityPanel: React.FC<CentralityPanelProps> = ({ mapId, onAnalysisComplete }) => {
   const [result, setResult] = useState<CentralityAnalysisResult | null>(null)
   const [activeMetric, setActiveMetric] = useState<CentralityType>('degree')
   const calculateMutation = useCalculateCentrality(mapId, 10)
@@ -15,6 +16,7 @@ const CentralityPanel: React.FC<CentralityPanelProps> = ({ mapId }) => {
     calculateMutation.mutate(undefined, {
       onSuccess: (data) => {
         setResult(data)
+        onAnalysisComplete?.(data)
       },
     })
   }

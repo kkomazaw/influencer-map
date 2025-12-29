@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import NetworkGraph from '../components/NetworkGraph'
+import NetworkGraph, { ColorMode } from '../components/NetworkGraph'
 import MemberForm from '../components/MemberForm'
 import MemberList from '../components/MemberList'
 import RelationshipForm from '../components/RelationshipForm'
@@ -11,9 +11,10 @@ import CentralityPanel from '../components/CentralityPanel'
 import { useMembers } from '../hooks/useMembers'
 import { useRelationships } from '../hooks/useRelationships'
 import { useGroups } from '../hooks/useGroups'
+import { useCommunities } from '../hooks/useCommunities'
 import { useStore } from '../stores/useStore'
 import { socketService } from '../services/socket'
-import { Member, Group, Relationship } from '@shared/types'
+import { Member, Group, Relationship, CentralityAnalysisResult } from '@shared/types'
 
 const Dashboard: React.FC = () => {
   const { mapId } = useParams<{ mapId: string }>()
@@ -21,9 +22,13 @@ const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'members' | 'relationships' | 'groups' | 'communities' | 'centrality'>('members')
   const [editingMember, setEditingMember] = useState<Member | null>(null)
   const [editingGroup, setEditingGroup] = useState<Group | null>(null)
+  const [colorMode, setColorMode] = useState<ColorMode>('default')
+  const [centralityResult, setCentralityResult] = useState<CentralityAnalysisResult | null>(null)
+
   const { members, isLoading: membersLoading, createMember, updateMember: updateMemberApi, deleteMember, isCreating, isUpdating } = useMembers(mapId)
   const { relationships, isLoading: relsLoading, createRelationship, deleteRelationship, isCreating: isCreatingRel } = useRelationships(mapId)
   const { groups, isLoading: groupsLoading, createGroup, updateGroup: updateGroupApi, deleteGroup, isCreating: isCreatingGroup, isUpdating: isUpdatingGroup } = useGroups(mapId)
+  const { data: communities = [], isLoading: communitiesLoading } = useCommunities(mapId || '')
   const { selectedMemberId, setSelectedMemberId, addMember, updateMember, removeMember, addRelationship, updateRelationship, removeRelationship, addGroup, updateGroup, removeGroup } = useStore()
 
   if (!mapId) {
@@ -79,7 +84,7 @@ const Dashboard: React.FC = () => {
     setSelectedMemberId(memberId === selectedMemberId ? null : memberId)
   }
 
-  if (membersLoading || relsLoading || groupsLoading) {
+  if (membersLoading || relsLoading || groupsLoading || communitiesLoading) {
     return (
       <div className="dashboard">
         <div className="loading">読み込み中...</div>
@@ -106,10 +111,21 @@ const Dashboard: React.FC = () => {
 
       <main className="dashboard-main">
         <div className="graph-container">
+          <div className="graph-controls">
+            <label>ノード色:</label>
+            <select value={colorMode} onChange={(e) => setColorMode(e.target.value as ColorMode)}>
+              <option value="default">デフォルト</option>
+              <option value="department">部署</option>
+              <option value="community">コミュニティ</option>
+            </select>
+          </div>
           <NetworkGraph
             members={members}
             relationships={relationships}
             groups={groups}
+            communities={communities}
+            centralityScores={centralityResult?.scores}
+            colorMode={colorMode}
             onNodeClick={handleNodeClick}
           />
         </div>
@@ -260,7 +276,10 @@ const Dashboard: React.FC = () => {
             )}
 
             {activeTab === 'centrality' && (
-              <CentralityPanel mapId={mapId} />
+              <CentralityPanel
+                mapId={mapId}
+                onAnalysisComplete={setCentralityResult}
+              />
             )}
           </div>
         </aside>

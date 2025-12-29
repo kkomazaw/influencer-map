@@ -1,17 +1,83 @@
 import React, { useEffect, useRef } from 'react'
 import cytoscape, { Core, ElementDefinition } from 'cytoscape'
-import { Member, Relationship, Group } from '@shared/types'
+import { Member, Relationship, Group, Community, MemberCentralityScore } from '@shared/types'
+
+export type ColorMode = 'department' | 'community' | 'default'
 
 interface NetworkGraphProps {
   members: Member[]
   relationships: Relationship[]
   groups?: Group[]
+  communities?: Community[]
+  centralityScores?: MemberCentralityScore[]
+  colorMode?: ColorMode
   onNodeClick?: (memberId: string) => void
 }
 
-const NetworkGraph: React.FC<NetworkGraphProps> = ({ members, relationships, groups = [], onNodeClick }) => {
+const NetworkGraph: React.FC<NetworkGraphProps> = ({
+  members,
+  relationships,
+  groups = [],
+  communities = [],
+  centralityScores = [],
+  colorMode = 'default',
+  onNodeClick
+}) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const cyRef = useRef<Core | null>(null)
+
+  // Helper: Get department color
+  const getDepartmentColor = (department: string): string => {
+    const colors: { [key: string]: string } = {
+      '営業': '#2196F3',
+      '開発': '#4CAF50',
+      '人事': '#FF9800',
+      'マーケティング': '#9C27B0',
+      '財務': '#F44336',
+      '総務': '#795548',
+    }
+    return colors[department] || '#607D8B'
+  }
+
+  // Helper: Get community color for a member
+  const getCommunityColor = (memberId: string): string => {
+    const community = communities.find(c => c.memberIds.includes(memberId))
+    return community?.color || '#607D8B'
+  }
+
+  // Helper: Get node color based on color mode
+  const getNodeColor = (member: Member): string => {
+    switch (colorMode) {
+      case 'department':
+        return getDepartmentColor(member.department || '')
+      case 'community':
+        return getCommunityColor(member.id)
+      default:
+        return '#4CAF50'
+    }
+  }
+
+  // Helper: Get node size based on centrality score
+  const getNodeSize = (memberId: string): number => {
+    const baseSize = 40
+    const maxSize = 80
+    const minSize = 30
+
+    if (centralityScores.length === 0) {
+      return baseSize
+    }
+
+    const score = centralityScores.find(s => s.memberId === memberId)
+    if (!score) {
+      return minSize
+    }
+
+    // Use degree centrality for node sizing (most intuitive)
+    // Normalize between minSize and maxSize
+    const maxDegree = Math.max(...centralityScores.map(s => s.degree), 0.01)
+    const normalizedScore = score.degree / maxDegree
+    return minSize + (maxSize - minSize) * normalizedScore
+  }
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -38,6 +104,8 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({ members, relationships, gro
           department: member.department,
           position: member.position,
           parent: memberGroup ? `group-${memberGroup.id}` : undefined,
+          nodeColor: getNodeColor(member),
+          nodeSize: getNodeSize(member.id),
         },
       }
     }) as ElementDefinition[]
@@ -85,14 +153,17 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({ members, relationships, gro
         {
           selector: 'node[!type]',
           style: {
-            'background-color': '#4CAF50',
+            'background-color': 'data(nodeColor)',
             label: 'data(label)',
             color: '#fff',
             'text-valign': 'center',
             'text-halign': 'center',
             'font-size': '12px',
-            width: 40,
-            height: 40,
+            width: 'data(nodeSize)',
+            height: 'data(nodeSize)',
+            'border-width': 2,
+            'border-color': '#fff',
+            'border-opacity': 0.5,
           },
         },
         {
@@ -153,7 +224,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({ members, relationships, gro
     return () => {
       cyRef.current?.destroy()
     }
-  }, [members, relationships, groups, onNodeClick])
+  }, [members, relationships, groups, communities, centralityScores, colorMode, onNodeClick])
 
   return (
     <div
