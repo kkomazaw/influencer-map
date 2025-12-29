@@ -1,0 +1,91 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ヘルパー関数: ユーザーが認証されているか
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // ヘルパー関数: ユーザーIDが一致するか
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // ヘルパー関数: マップのオーナーか確認
+    function isMapOwner(mapId) {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/maps/$(mapId)).data.ownerId == request.auth.uid;
+    }
+
+    // Mapsコレクション
+    match /maps/{mapId} {
+      // 読み取り: 認証済みユーザーのみ
+      allow read: if isAuthenticated();
+
+      // 作成: 認証済みユーザーで、ownerIdが自分のUID
+      allow create: if isAuthenticated() &&
+                      request.resource.data.ownerId == request.auth.uid;
+
+      // 更新・削除: マップのオーナーのみ
+      allow update, delete: if isOwner(resource.data.ownerId);
+    }
+
+    // Membersコレクション
+    match /members/{memberId} {
+      // 読み取り: 認証済みユーザーのみ
+      allow read: if isAuthenticated();
+
+      // 作成: 認証済みユーザーで、所属するマップのオーナー
+      allow create: if isAuthenticated() &&
+                      isMapOwner(request.resource.data.mapId);
+
+      // 更新・削除: 所属するマップのオーナー
+      allow update, delete: if isMapOwner(resource.data.mapId);
+    }
+
+    // Relationshipsコレクション
+    match /relationships/{relationshipId} {
+      // 読み取り: 認証済みユーザーのみ
+      allow read: if isAuthenticated();
+
+      // 作成: 認証済みユーザーで、所属するマップのオーナー
+      allow create: if isAuthenticated() &&
+                      isMapOwner(request.resource.data.mapId);
+
+      // 更新・削除: 所属するマップのオーナー
+      allow update, delete: if isMapOwner(resource.data.mapId);
+    }
+
+    // Groupsコレクション
+    match /groups/{groupId} {
+      // 読み取り: 認証済みユーザーのみ
+      allow read: if isAuthenticated();
+
+      // 作成: 認証済みユーザーで、所属するマップのオーナー
+      allow create: if isAuthenticated() &&
+                      isMapOwner(request.resource.data.mapId);
+
+      // 更新・削除: 所属するマップのオーナー
+      allow update, delete: if isMapOwner(resource.data.mapId);
+    }
+
+    // Communitiesコレクション（将来の分析機能用）
+    match /communities/{communityId} {
+      // 読み取り: 認証済みユーザーのみ
+      allow read: if isAuthenticated();
+
+      // 作成: 認証済みユーザーで、所属するマップのオーナー
+      allow create: if isAuthenticated() &&
+                      isMapOwner(request.resource.data.mapId);
+
+      // 更新・削除: 所属するマップのオーナー
+      allow update, delete: if isMapOwner(resource.data.mapId);
+    }
+
+    // デフォルト: 他のすべてのアクセスを拒否
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -180,24 +180,46 @@ Firestoreを使用する場合、以下の手順でFirebaseプロジェクトを
 
 ## デプロイ
 
-### フロントエンド（Vercel/Netlify推奨）
+本番環境へのデプロイについては、詳細な手順書をご覧ください：
+
+**[デプロイメント手順書（docs/DEPLOYMENT.md）](./docs/DEPLOYMENT.md)**
+
+手順書には以下の内容が含まれています：
+- Firebase プロジェクトの設定
+- Vercel へのフロントエンドデプロイ
+- Render へのバックエンドデプロイ
+- 環境変数の設定方法
+- CORS とセキュリティ設定
+- Firestore セキュリティルールの適用
+- データバックアップの設定
+- トラブルシューティング
+
+### クイックスタート
 
 ```bash
-# ビルド
+# フロントエンドのビルドテスト
 npm run build:frontend
 
-# frontend/dist ディレクトリをデプロイ
+# バックエンドのビルドテスト
+npm run build:backend
 ```
 
-### バックエンド（Render/Railway推奨）
+### Firestoreセキュリティルール
+
+本番環境にデプロイする前に、Firestoreセキュリティルールを適用してください：
 
 ```bash
-# ビルド
-npm run build:backend
+# Firebase CLIをインストール（未インストールの場合）
+npm install -g firebase-tools
 
-# backend/dist ディレクトリから起動
-npm start -w backend
+# Firebaseにログイン
+firebase login
+
+# セキュリティルールをデプロイ
+firebase deploy --only firestore:rules
 ```
+
+セキュリティルールは `firestore.rules` ファイルに定義されています。
 
 ## ライセンス
 
