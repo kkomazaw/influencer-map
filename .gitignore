@@ -6,6 +6,8 @@ node_modules/
 # Production builds
 dist/
 build/
+shared/**/*.js
+shared/**/*.d.ts
 
 # Environment variables
 .env
