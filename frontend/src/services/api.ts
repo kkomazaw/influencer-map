@@ -247,6 +247,23 @@ export const mapsApi = {
 }
 
 // ========================================
+// Centrality API
+// ========================================
+
+export const centralityApi = {
+  /**
+   * 中心性分析を実行
+   */
+  calculate: async (mapId: string, topN: number = 10) => {
+    const response = await api.post<ApiResponse<any>>(
+      `/analysis/centrality/calculate?mapId=${mapId}&topN=${topN}`
+    )
+    if (!response.data.data) throw new Error('Failed to calculate centrality')
+    return response.data.data
+  },
+}
+
+// ========================================
 // Community API
 // ========================================
 

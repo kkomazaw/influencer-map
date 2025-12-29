@@ -7,6 +7,7 @@ import RelationshipForm from '../components/RelationshipForm'
 import GroupForm from '../components/GroupForm'
 import GroupList from '../components/GroupList'
 import CommunityPanel from '../components/CommunityPanel'
+import CentralityPanel from '../components/CentralityPanel'
 import { useMembers } from '../hooks/useMembers'
 import { useRelationships } from '../hooks/useRelationships'
 import { useGroups } from '../hooks/useGroups'
@@ -17,7 +18,7 @@ import { Member, Group, Relationship } from '@shared/types'
 const Dashboard: React.FC = () => {
   const { mapId } = useParams<{ mapId: string }>()
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'members' | 'relationships' | 'groups' | 'communities'>('members')
+  const [activeTab, setActiveTab] = useState<'members' | 'relationships' | 'groups' | 'communities' | 'centrality'>('members')
   const [editingMember, setEditingMember] = useState<Member | null>(null)
   const [editingGroup, setEditingGroup] = useState<Group | null>(null)
   const { members, isLoading: membersLoading, createMember, updateMember: updateMemberApi, deleteMember, isCreating, isUpdating } = useMembers(mapId)
@@ -139,6 +140,12 @@ const Dashboard: React.FC = () => {
             >
               コミュニティ
             </button>
+            <button
+              className={`tab ${activeTab === 'centrality' ? 'active' : ''}`}
+              onClick={() => setActiveTab('centrality')}
+            >
+              影響力分析
+            </button>
           </div>
 
           <div className="tab-content">
@@ -250,6 +257,10 @@ const Dashboard: React.FC = () => {
 
             {activeTab === 'communities' && (
               <CommunityPanel mapId={mapId} members={members} />
+            )}
+
+            {activeTab === 'centrality' && (
+              <CentralityPanel mapId={mapId} />
             )}
           </div>
         </aside>
