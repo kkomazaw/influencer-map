@@ -851,3 +851,139 @@
   color: #ccc;
   line-height: 1.5;
 }
+
+/* =================================
+   Statistics Panel Styles
+   ================================= */
+
+.statistics-panel {
+  padding: 1.5rem;
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+.statistics-panel h3 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.125rem;
+}
+
+.stat-section {
+  background-color: #2a2a2a;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.stat-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  user-select: none;
+}
+
+.stat-section-header:hover {
+  background-color: #333;
+}
+
+.stat-section-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  color: #4CAF50;
+}
+
+.toggle-icon {
+  color: #888;
+  font-size: 0.75rem;
+}
+
+.stat-section-content {
+  padding: 0 1rem 1rem 1rem;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.stat-card {
+  background-color: #1e1e1e;
+  padding: 0.75rem;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #888;
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.stat-subsection {
+  margin-top: 1rem;
+}
+
+.stat-subsection h5 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  color: #888;
+}
+
+.stat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.stat-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background-color: #1e1e1e;
+  border-radius: 4px;
+}
+
+.stat-list-label {
+  font-size: 0.875rem;
+  color: #ccc;
+}
+
+.stat-list-value {
+  font-size: 0.875rem;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.community-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.community-color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rank-badge-small {
+  background-color: #4CAF50;
+  color: #fff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  margin-right: 0.5rem;
+}

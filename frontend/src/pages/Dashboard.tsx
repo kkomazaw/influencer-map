@@ -9,6 +9,7 @@ import GroupList from '../components/GroupList'
 import CommunityPanel from '../components/CommunityPanel'
 import CentralityPanel from '../components/CentralityPanel'
 import IsolatedMembersPanel from '../components/IsolatedMembersPanel'
+import StatisticsPanel from '../components/StatisticsPanel'
 import { useMembers } from '../hooks/useMembers'
 import { useRelationships } from '../hooks/useRelationships'
 import { useGroups } from '../hooks/useGroups'
@@ -20,7 +21,7 @@ import { Member, Group, Relationship, CentralityAnalysisResult } from '@shared/t
 const Dashboard: React.FC = () => {
   const { mapId } = useParams<{ mapId: string }>()
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'members' | 'relationships' | 'groups' | 'communities' | 'centrality' | 'isolated'>('members')
+  const [activeTab, setActiveTab] = useState<'members' | 'relationships' | 'groups' | 'communities' | 'centrality' | 'isolated' | 'statistics'>('members')
   const [editingMember, setEditingMember] = useState<Member | null>(null)
   const [editingGroup, setEditingGroup] = useState<Group | null>(null)
   const [colorMode, setColorMode] = useState<ColorMode>('default')
@@ -169,6 +170,12 @@ const Dashboard: React.FC = () => {
             >
               孤立検出
             </button>
+            <button
+              className={`tab ${activeTab === 'statistics' ? 'active' : ''}`}
+              onClick={() => setActiveTab('statistics')}
+            >
+              統計情報
+            </button>
           </div>
 
           <div className="tab-content">
@@ -294,6 +301,16 @@ const Dashboard: React.FC = () => {
                 members={members}
                 relationships={relationships}
                 onMemberClick={setSelectedMemberId}
+              />
+            )}
+
+            {activeTab === 'statistics' && (
+              <StatisticsPanel
+                members={members}
+                relationships={relationships}
+                groups={groups}
+                communities={communities}
+                centralityResult={centralityResult}
               />
             )}
           </div>
