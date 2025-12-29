@@ -10,6 +10,7 @@ import memberRoutes from './routes/memberRoutes.js'
 import relationshipRoutes from './routes/relationshipRoutes.js'
 import groupRoutes from './routes/groupRoutes.js'
 import mapRoutes from './routes/mapRoutes.js'
+import analysisRoutes from './routes/analysisRoutes.js'
 
 dotenv.config()
 
@@ -73,6 +74,7 @@ app.use('/api/maps', mapRoutes)
 app.use('/api/members', memberRoutes)
 app.use('/api/relationships', relationshipRoutes)
 app.use('/api/groups', groupRoutes)
+app.use('/api/analysis', analysisRoutes)
 
 // Socket.io connection
 io.on('connection', (socket) => {
