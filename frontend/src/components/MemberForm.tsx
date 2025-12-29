@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { CreateMemberInput, Member } from '@shared/types'
 
 interface MemberFormProps {
+  mapId: string
   onSubmit: (input: CreateMemberInput) => void
   onCancel?: () => void
   isLoading?: boolean
@@ -10,6 +11,7 @@ interface MemberFormProps {
 }
 
 const MemberForm: React.FC<MemberFormProps> = ({
+  mapId,
   onSubmit,
   onCancel,
   isLoading,
@@ -17,6 +19,7 @@ const MemberForm: React.FC<MemberFormProps> = ({
   initialData
 }) => {
   const [formData, setFormData] = useState<CreateMemberInput>({
+    mapId,
     name: '',
     email: '',
     department: '',
@@ -26,19 +29,20 @@ const MemberForm: React.FC<MemberFormProps> = ({
   useEffect(() => {
     if (editMode && initialData) {
       setFormData({
+        mapId,
         name: initialData.name,
         email: initialData.email,
         department: initialData.department || '',
         position: initialData.position || '',
       })
     }
-  }, [editMode, initialData])
+  }, [editMode, initialData, mapId])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSubmit(formData)
     if (!editMode) {
-      setFormData({ name: '', email: '', department: '', position: '' })
+      setFormData({ mapId, name: '', email: '', department: '', position: '' })
     }
   }
 

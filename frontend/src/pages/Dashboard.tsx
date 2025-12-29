@@ -11,7 +11,7 @@ import { useRelationships } from '../hooks/useRelationships'
 import { useGroups } from '../hooks/useGroups'
 import { useStore } from '../stores/useStore'
 import { socketService } from '../services/socket'
-import { Member, Group } from '@shared/types'
+import { Member, Group, Relationship } from '@shared/types'
 
 const Dashboard: React.FC = () => {
   const { mapId } = useParams<{ mapId: string }>()
@@ -34,32 +34,38 @@ const Dashboard: React.FC = () => {
     socketService.connect()
 
     // Listen to real-time events
-    socketService.on('member:created', (data) => {
-      addMember(data)
+    socketService.on('member:created', (data: unknown) => {
+      addMember(data as Member)
     })
-    socketService.on('member:updated', (data) => {
-      updateMember(data.id, data)
+    socketService.on('member:updated', (data: unknown) => {
+      const member = data as Member
+      updateMember(member.id, member)
     })
-    socketService.on('member:deleted', (data) => {
-      removeMember(data.id)
+    socketService.on('member:deleted', (data: unknown) => {
+      const payload = data as { id: string }
+      removeMember(payload.id)
     })
-    socketService.on('relationship:created', (data) => {
-      addRelationship(data)
+    socketService.on('relationship:created', (data: unknown) => {
+      addRelationship(data as Relationship)
     })
-    socketService.on('relationship:updated', (data) => {
-      updateRelationship(data.id, data)
+    socketService.on('relationship:updated', (data: unknown) => {
+      const relationship = data as Relationship
+      updateRelationship(relationship.id, relationship)
     })
-    socketService.on('relationship:deleted', (data) => {
-      removeRelationship(data.id)
+    socketService.on('relationship:deleted', (data: unknown) => {
+      const payload = data as { id: string }
+      removeRelationship(payload.id)
     })
-    socketService.on('group:created', (data) => {
-      addGroup(data)
+    socketService.on('group:created', (data: unknown) => {
+      addGroup(data as Group)
     })
-    socketService.on('group:updated', (data) => {
-      updateGroup(data.id, data)
+    socketService.on('group:updated', (data: unknown) => {
+      const group = data as Group
+      updateGroup(group.id, group)
     })
-    socketService.on('group:deleted', (data) => {
-      removeGroup(data.id)
+    socketService.on('group:deleted', (data: unknown) => {
+      const payload = data as { id: string }
+      removeGroup(payload.id)
     })
 
     return () => {
@@ -133,12 +139,13 @@ const Dashboard: React.FC = () => {
               <div className="members-panel">
                 <h3>{editingMember ? 'メンバー編集' : 'メンバー管理'}</h3>
                 <MemberForm
+                  mapId={mapId}
                   onSubmit={(input) => {
                     if (editingMember) {
                       updateMemberApi({ id: editingMember.id, input })
                       setEditingMember(null)
                     } else {
-                      createMember({ ...input, mapId })
+                      createMember(input)
                     }
                   }}
                   onCancel={editingMember ? () => setEditingMember(null) : undefined}
@@ -162,8 +169,9 @@ const Dashboard: React.FC = () => {
               <div className="relationships-panel">
                 <h3>関係性管理</h3>
                 <RelationshipForm
+                  mapId={mapId}
                   members={members}
-                  onSubmit={(input) => createRelationship({ ...input, mapId })}
+                  onSubmit={(input) => createRelationship(input)}
                   isLoading={isCreatingRel}
                 />
                 <div className="divider" />
@@ -207,13 +215,14 @@ const Dashboard: React.FC = () => {
               <div className="groups-panel">
                 <h3>{editingGroup ? 'グループ編集' : 'グループ管理'}</h3>
                 <GroupForm
+                  mapId={mapId}
                   members={members}
                   onSubmit={(input) => {
                     if (editingGroup) {
                       updateGroupApi({ id: editingGroup.id, input })
                       setEditingGroup(null)
                     } else {
-                      createGroup({ ...input, mapId })
+                      createGroup(input)
                     }
                   }}
                   onCancel={editingGroup ? () => setEditingGroup(null) : undefined}

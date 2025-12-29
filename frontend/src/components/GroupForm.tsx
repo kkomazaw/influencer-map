@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { CreateGroupInput, Group, Member } from '@shared/types'
 
 interface GroupFormProps {
+  mapId: string
   members: Member[]
   onSubmit: (input: CreateGroupInput) => void
   onCancel?: () => void
@@ -16,6 +17,7 @@ const PRESET_COLORS = [
 ]
 
 const GroupForm: React.FC<GroupFormProps> = ({
+  mapId,
   members,
   onSubmit,
   onCancel,
@@ -24,6 +26,7 @@ const GroupForm: React.FC<GroupFormProps> = ({
   initialData
 }) => {
   const [formData, setFormData] = useState<CreateGroupInput>({
+    mapId,
     name: '',
     description: '',
     memberIds: [],
@@ -33,19 +36,21 @@ const GroupForm: React.FC<GroupFormProps> = ({
   useEffect(() => {
     if (editMode && initialData) {
       setFormData({
+        mapId,
         name: initialData.name,
         description: initialData.description || '',
         memberIds: initialData.memberIds,
         color: initialData.color || PRESET_COLORS[0],
       })
     }
-  }, [editMode, initialData])
+  }, [editMode, initialData, mapId])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSubmit(formData)
     if (!editMode) {
       setFormData({
+        mapId,
         name: '',
         description: '',
         memberIds: [],

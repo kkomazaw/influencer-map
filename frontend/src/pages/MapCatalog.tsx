@@ -1,22 +1,25 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMaps } from '../hooks/useMaps'
-import { Map, CreateMapInput } from '@shared/types'
+import { useAuth } from '../contexts/AuthContext'
+import { CreateMapInput } from '@shared/types'
 
 const MapCatalog: React.FC = () => {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { maps, isLoading, createMap, deleteMap } = useMaps()
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState<CreateMapInput>({
     name: '',
     description: '',
+    ownerId: user?.uid || '',
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     createMap(formData, {
       onSuccess: () => {
-        setFormData({ name: '', description: '' })
+        setFormData({ name: '', description: '', ownerId: user?.uid || '' })
         setShowForm(false)
       },
     })

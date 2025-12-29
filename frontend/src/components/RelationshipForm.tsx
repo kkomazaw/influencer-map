@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
-import { CreateRelationshipInput, Member, RelationshipType } from '@shared/types'
+import { CreateRelationshipInput, Member } from '@shared/types'
 
 interface RelationshipFormProps {
+  mapId: string
   members: Member[]
   onSubmit: (input: CreateRelationshipInput) => void
   onCancel?: () => void
@@ -9,12 +10,14 @@ interface RelationshipFormProps {
 }
 
 const RelationshipForm: React.FC<RelationshipFormProps> = ({
+  mapId,
   members,
   onSubmit,
   onCancel,
   isLoading,
 }) => {
   const [formData, setFormData] = useState<CreateRelationshipInput>({
+    mapId,
     sourceId: '',
     targetId: '',
     type: 'collaboration',
@@ -30,6 +33,7 @@ const RelationshipForm: React.FC<RelationshipFormProps> = ({
     }
     onSubmit(formData)
     setFormData({
+      mapId,
       sourceId: '',
       targetId: '',
       type: 'collaboration',

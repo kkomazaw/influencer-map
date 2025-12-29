@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { mapsApi } from '../services/api'
-import { CreateMapInput, UpdateMapInput, Map } from '@shared/types'
+import { CreateMapInput, UpdateMapInput } from '@shared/types'
 
 export const useMaps = () => {
   const queryClient = useQueryClient()

@@ -27,7 +27,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({ members, relationships, gro
     }))
 
     // Create nodes from members
-    const nodes: ElementDefinition[] = members.map((member) => {
+    const nodes = members.map((member) => {
       // Check if member belongs to any group
       const memberGroup = groups.find((g) => g.memberIds.includes(member.id))
 
@@ -40,7 +40,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({ members, relationships, gro
           parent: memberGroup ? `group-${memberGroup.id}` : undefined,
         },
       }
-    })
+    }) as ElementDefinition[]
 
     // Create edges from relationships
     const edges: ElementDefinition[] = relationships.map((rel) => ({
