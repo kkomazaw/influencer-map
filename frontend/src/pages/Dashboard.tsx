@@ -4,6 +4,7 @@ import NetworkGraph, { ColorMode } from '../components/NetworkGraph'
 import MemberForm from '../components/MemberForm'
 import MemberList from '../components/MemberList'
 import RelationshipForm from '../components/RelationshipForm'
+import RelationshipLegend from '../components/RelationshipLegend'
 import GroupForm from '../components/GroupForm'
 import GroupList from '../components/GroupList'
 import CommunityPanel from '../components/CommunityPanel'
@@ -11,10 +12,13 @@ import CentralityPanel from '../components/CentralityPanel'
 import IsolatedMembersPanel from '../components/IsolatedMembersPanel'
 import StatisticsPanel from '../components/StatisticsPanel'
 import MemberDetailStats from '../components/MemberDetailStats'
+import FilterPanel from '../components/FilterPanel'
+import ExportPanel from '../components/ExportPanel'
 import { useMembers } from '../hooks/useMembers'
 import { useRelationships } from '../hooks/useRelationships'
 import { useGroups } from '../hooks/useGroups'
 import { useCommunities } from '../hooks/useCommunities'
+import { useFilteredData } from '../hooks/useFilteredData'
 import { useStore } from '../stores/useStore'
 import { socketService } from '../services/socket'
 import { Member, Group, Relationship, CentralityAnalysisResult } from '@shared/types'
@@ -22,17 +26,26 @@ import { Member, Group, Relationship, CentralityAnalysisResult } from '@shared/t
 const Dashboard: React.FC = () => {
   const { mapId } = useParams<{ mapId: string }>()
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'members' | 'relationships' | 'groups' | 'communities' | 'centrality' | 'isolated' | 'statistics'>('members')
+  const [activeTab, setActiveTab] = useState<'members' | 'relationships' | 'groups' | 'communities' | 'centrality' | 'isolated' | 'statistics' | 'filters' | 'export'>('members')
   const [editingMember, setEditingMember] = useState<Member | null>(null)
   const [editingGroup, setEditingGroup] = useState<Group | null>(null)
   const [colorMode, setColorMode] = useState<ColorMode>('default')
   const [centralityResult, setCentralityResult] = useState<CentralityAnalysisResult | null>(null)
+  const [cyInstance, setCyInstance] = useState<any>(null)
 
   const { members, isLoading: membersLoading, createMember, updateMember: updateMemberApi, deleteMember, isCreating, isUpdating } = useMembers(mapId)
   const { relationships, isLoading: relsLoading, createRelationship, deleteRelationship, isCreating: isCreatingRel } = useRelationships(mapId)
   const { groups, isLoading: groupsLoading, createGroup, updateGroup: updateGroupApi, deleteGroup, isCreating: isCreatingGroup, isUpdating: isUpdatingGroup } = useGroups(mapId)
   const { data: communities = [], isLoading: communitiesLoading } = useCommunities(mapId || '')
-  const { selectedMemberId, setSelectedMemberId, addMember, updateMember, removeMember, addRelationship, updateRelationship, removeRelationship, addGroup, updateGroup, removeGroup } = useStore()
+  const { selectedMemberId, setSelectedMemberId, filters, addMember, updateMember, removeMember, addRelationship, updateRelationship, removeRelationship, addGroup, updateGroup, removeGroup } = useStore()
+
+  // Apply filters to members and relationships
+  const { filteredMembers, filteredRelationships } = useFilteredData(
+    members,
+    relationships,
+    filters
+  )
+
 
   if (!mapId) {
     navigate('/')
@@ -106,10 +119,31 @@ const Dashboard: React.FC = () => {
         <h1>Influencer Map</h1>
         <p>組織関係性可視化ダッシュボード</p>
         <div className="stats">
-          <span>メンバー: {members.length}</span>
-          <span>関係性: {relationships.length}</span>
+          <span>メンバー: {members.length} {filteredMembers.length < members.length && `(表示: ${filteredMembers.length})`}</span>
+          <span>関係性: {relationships.length} {filteredRelationships.length < relationships.length && `(表示: ${filteredRelationships.length})`}</span>
           <span>グループ: {groups.length}</span>
         </div>
+        {(filters.searchText ||
+          filters.departments.length > 0 ||
+          filters.positions.length > 0 ||
+          filters.relationshipTypes.length > 0 ||
+          filters.strengthRange[0] !== 1 ||
+          filters.strengthRange[1] !== 10) && (
+          <div style={{
+            marginTop: '0.5rem',
+            padding: '0.5rem 1rem',
+            backgroundColor: 'rgba(255, 152, 0, 0.2)',
+            borderRadius: '4px',
+            fontSize: '0.875rem',
+            color: '#ff9800',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            justifyContent: 'space-between'
+          }}>
+            <span>⚠️ フィルタが適用されています。すべてのデータを表示するには「フィルタ」タブでクリアしてください。</span>
+          </div>
+        )}
       </header>
 
       <main className="dashboard-main">
@@ -122,14 +156,16 @@ const Dashboard: React.FC = () => {
               <option value="community">コミュニティ</option>
             </select>
           </div>
+          <RelationshipLegend />
           <NetworkGraph
-            members={members}
-            relationships={relationships}
+            members={filteredMembers}
+            relationships={filteredRelationships}
             groups={groups}
             communities={communities}
             centralityScores={centralityResult?.scores}
             colorMode={colorMode}
             onNodeClick={handleNodeClick}
+            onGraphReady={setCyInstance}
           />
           {selectedMemberId && (
             <div className="member-detail-overlay">
@@ -197,6 +233,18 @@ const Dashboard: React.FC = () => {
               onClick={() => setActiveTab('statistics')}
             >
               統計情報
+            </button>
+            <button
+              className={`tab ${activeTab === 'filters' ? 'active' : ''}`}
+              onClick={() => setActiveTab('filters')}
+            >
+              フィルタ
+            </button>
+            <button
+              className={`tab ${activeTab === 'export' ? 'active' : ''}`}
+              onClick={() => setActiveTab('export')}
+            >
+              エクスポート
             </button>
           </div>
 
@@ -333,6 +381,32 @@ const Dashboard: React.FC = () => {
                 groups={groups}
                 communities={communities}
                 centralityResult={centralityResult}
+              />
+            )}
+
+            {activeTab === 'filters' && (
+              <FilterPanel members={members} relationships={relationships} />
+            )}
+
+            {activeTab === 'export' && mapId && (
+              <ExportPanel
+                mapId={mapId}
+                members={members}
+                relationships={relationships}
+                groups={groups}
+                communities={communities}
+                centralityResult={centralityResult}
+                cyInstance={cyInstance}
+                onImportMembers={async (memberInputs) => {
+                  for (const input of memberInputs) {
+                    await createMember(input)
+                  }
+                }}
+                onImportRelationships={async (relationshipInputs) => {
+                  for (const input of relationshipInputs) {
+                    await createRelationship(input)
+                  }
+                }}
               />
             )}
           </div>

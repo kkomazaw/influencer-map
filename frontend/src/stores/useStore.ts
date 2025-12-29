@@ -1,11 +1,23 @@
 import { create } from 'zustand'
 import { Member, Relationship, Group } from '@shared/types'
 
+export interface FilterState {
+  // Member filters
+  searchText: string
+  departments: string[]
+  positions: string[]
+
+  // Relationship filters
+  relationshipTypes: string[]
+  strengthRange: [number, number]
+}
+
 interface AppState {
   members: Member[]
   relationships: Relationship[]
   groups: Group[]
   selectedMemberId: string | null
+  filters: FilterState
 
   // Actions
   setMembers: (members: Member[]) => void
@@ -24,6 +36,22 @@ interface AppState {
   removeGroup: (id: string) => void
 
   setSelectedMemberId: (id: string | null) => void
+
+  // Filter actions
+  setSearchText: (text: string) => void
+  setDepartments: (departments: string[]) => void
+  setPositions: (positions: string[]) => void
+  setRelationshipTypes: (types: string[]) => void
+  setStrengthRange: (range: [number, number]) => void
+  clearFilters: () => void
+}
+
+const initialFilterState: FilterState = {
+  searchText: '',
+  departments: [],
+  positions: [],
+  relationshipTypes: [],
+  strengthRange: [1, 10],
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -31,6 +59,7 @@ export const useStore = create<AppState>((set) => ({
   relationships: [],
   groups: [],
   selectedMemberId: null,
+  filters: initialFilterState,
 
   setMembers: (members) => set({ members }),
   addMember: (member) => set((state) => ({ members: [...state.members, member] })),
@@ -70,4 +99,30 @@ export const useStore = create<AppState>((set) => ({
     })),
 
   setSelectedMemberId: (id) => set({ selectedMemberId: id }),
+
+  // Filter actions
+  setSearchText: (searchText) =>
+    set((state) => ({
+      filters: { ...state.filters, searchText },
+    })),
+  setDepartments: (departments) =>
+    set((state) => ({
+      filters: { ...state.filters, departments },
+    })),
+  setPositions: (positions) =>
+    set((state) => ({
+      filters: { ...state.filters, positions },
+    })),
+  setRelationshipTypes: (relationshipTypes) =>
+    set((state) => ({
+      filters: { ...state.filters, relationshipTypes },
+    })),
+  setStrengthRange: (strengthRange) =>
+    set((state) => ({
+      filters: { ...state.filters, strengthRange },
+    })),
+  clearFilters: () =>
+    set({
+      filters: initialFilterState,
+    }),
 }))

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo, useCallback } from 'react'
 import { Member } from '@shared/types'
 
 interface MemberListProps {
@@ -9,7 +9,72 @@ interface MemberListProps {
   onMemberDelete?: (memberId: string) => void
 }
 
-const MemberList: React.FC<MemberListProps> = ({
+interface MemberItemProps {
+  member: Member
+  isSelected: boolean
+  onMemberClick?: (memberId: string) => void
+  onMemberEdit?: (member: Member) => void
+  onMemberDelete?: (memberId: string) => void
+}
+
+const MemberItem = memo<MemberItemProps>(({
+  member,
+  isSelected,
+  onMemberClick,
+  onMemberEdit,
+  onMemberDelete,
+}) => {
+  const handleClick = useCallback(() => {
+    onMemberClick?.(member.id)
+  }, [onMemberClick, member.id])
+
+  const handleEdit = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    onMemberEdit?.(member)
+  }, [onMemberEdit, member])
+
+  const handleDelete = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (confirm(`${member.name}を削除しますか？`)) {
+      onMemberDelete?.(member.id)
+    }
+  }, [onMemberDelete, member.id, member.name])
+
+  return (
+    <div
+      className={`member-item ${isSelected ? 'selected' : ''}`}
+      onClick={handleClick}
+    >
+      <div className="member-info">
+        <div className="member-avatar">{member.name.charAt(0)}</div>
+        <div className="member-details">
+          <h4>{member.name}</h4>
+          <p className="member-meta">
+            {member.department && <span>{member.department}</span>}
+            {member.position && <span> · {member.position}</span>}
+          </p>
+          <p className="member-email">{member.email}</p>
+        </div>
+      </div>
+      <div className="member-actions">
+        {onMemberEdit && (
+          <button className="btn-edit" onClick={handleEdit}>
+            編集
+          </button>
+        )}
+        {onMemberDelete && (
+          <button className="btn-delete" onClick={handleDelete}>
+            削除
+          </button>
+        )}
+      </div>
+    </div>
+  )
+})
+
+MemberItem.displayName = 'MemberItem'
+
+const MemberList: React.FC<MemberListProps> = memo(({
   members,
   selectedMemberId,
   onMemberClick,
@@ -23,52 +88,19 @@ const MemberList: React.FC<MemberListProps> = ({
   return (
     <div className="member-list">
       {members.map((member) => (
-        <div
+        <MemberItem
           key={member.id}
-          className={`member-item ${selectedMemberId === member.id ? 'selected' : ''}`}
-          onClick={() => onMemberClick?.(member.id)}
-        >
-          <div className="member-info">
-            <div className="member-avatar">{member.name.charAt(0)}</div>
-            <div className="member-details">
-              <h4>{member.name}</h4>
-              <p className="member-meta">
-                {member.department && <span>{member.department}</span>}
-                {member.position && <span> · {member.position}</span>}
-              </p>
-              <p className="member-email">{member.email}</p>
-            </div>
-          </div>
-          <div className="member-actions">
-            {onMemberEdit && (
-              <button
-                className="btn-edit"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onMemberEdit(member)
-                }}
-              >
-                編集
-              </button>
-            )}
-            {onMemberDelete && (
-              <button
-                className="btn-delete"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  if (confirm(`${member.name}を削除しますか？`)) {
-                    onMemberDelete(member.id)
-                  }
-                }}
-              >
-                削除
-              </button>
-            )}
-          </div>
-        </div>
+          member={member}
+          isSelected={selectedMemberId === member.id}
+          onMemberClick={onMemberClick}
+          onMemberEdit={onMemberEdit}
+          onMemberDelete={onMemberDelete}
+        />
       ))}
     </div>
   )
-}
+})
+
+MemberList.displayName = 'MemberList'
 
 export default MemberList

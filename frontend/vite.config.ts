@@ -22,5 +22,23 @@ export default defineConfig({
         ws: true
       }
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React core libraries
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          // Graph visualization library (largest dependency)
+          'cytoscape': ['cytoscape'],
+          // State management and data fetching
+          'data-vendor': ['@tanstack/react-query', 'zustand'],
+          // Socket.io client
+          'socket': ['socket.io-client'],
+        }
+      }
+    },
+    // Increase chunk size warning limit to 1000kb
+    chunkSizeWarningLimit: 1000
   }
 })

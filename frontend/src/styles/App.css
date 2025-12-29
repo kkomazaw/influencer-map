@@ -1227,3 +1227,432 @@
 .close-button:hover {
   color: #ff5722;
 }
+
+/* =================================
+   Relationship Legend Styles
+   ================================= */
+
+.relationship-legend {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 10;
+  background-color: rgba(26, 26, 26, 0.95);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #333;
+  min-width: 280px;
+  max-width: 320px;
+}
+
+.relationship-legend h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  color: #4CAF50;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.legend-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.legend-line {
+  width: 32px;
+  height: 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legend-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex: 1;
+}
+
+.legend-type {
+  font-size: 0.875rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+.legend-description {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.legend-note {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #333;
+  font-size: 0.75rem;
+  color: #888;
+  font-style: italic;
+}
+
+/* =================================
+   Graph Tooltip Styles
+   ================================= */
+
+.graph-tooltip-container {
+  transform: translate(-50%, -100%);
+  animation: tooltipFadeIn 0.2s ease;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -90%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%);
+  }
+}
+
+.graph-tooltip {
+  background-color: rgba(26, 26, 26, 0.98);
+  border: 1px solid #4CAF50;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  min-width: 180px;
+  max-width: 280px;
+  backdrop-filter: blur(8px);
+}
+
+.tooltip-header {
+  font-size: 0.875rem;
+  font-weight: bold;
+  color: #4CAF50;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #333;
+}
+
+.tooltip-item {
+  font-size: 0.75rem;
+  color: #ccc;
+  margin: 0.25rem 0;
+  line-height: 1.4;
+}
+
+.tooltip-section {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #333;
+}
+
+.tooltip-subtitle {
+  font-size: 0.7rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.375rem;
+}
+
+/* =================================
+   Filter Panel Styles
+   ================================= */
+
+.filter-panel {
+  padding: 1.5rem;
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.filter-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.btn-clear-filters {
+  padding: 0.375rem 0.75rem;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: background-color 0.2s;
+}
+
+.btn-clear-filters:hover {
+  background-color: #da190b;
+}
+
+.filter-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #333;
+}
+
+.filter-section:last-child {
+  border-bottom: none;
+}
+
+.filter-label {
+  display: block;
+  font-size: 0.875rem;
+  color: #4CAF50;
+  margin-bottom: 0.75rem;
+  font-weight: bold;
+}
+
+.filter-search-input {
+  width: 100%;
+  padding: 0.5rem;
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.875rem;
+}
+
+.filter-search-input:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+.filter-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.375rem 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  font-size: 0.875rem;
+  color: #ccc;
+}
+
+.filter-checkbox-label:hover {
+  background-color: #2a2a2a;
+}
+
+.filter-checkbox-label input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.filter-range-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-range-inputs input[type="range"] {
+  width: 100%;
+  cursor: pointer;
+  accent-color: #4CAF50;
+}
+
+.filter-active-summary {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: rgba(76, 175, 80, 0.1);
+  border-left: 4px solid #4CAF50;
+  border-radius: 4px;
+}
+
+.filter-active-header {
+  font-size: 0.75rem;
+  color: #4CAF50;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.filter-active-item {
+  font-size: 0.75rem;
+  color: #ccc;
+  margin: 0.25rem 0;
+  padding-left: 0.5rem;
+}
+
+/* ============================================
+   Export Panel Styles
+   ============================================ */
+
+.export-panel {
+  padding: 1.5rem;
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+.export-panel h3 {
+  margin: 0 0 1.5rem;
+  font-size: 1.125rem;
+}
+
+.export-section {
+  margin-bottom: 1.5rem;
+}
+
+.export-section-title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  color: #4CAF50;
+}
+
+.export-section-description {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  color: #888;
+  line-height: 1.4;
+}
+
+.export-button-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.export-image-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.scale-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.export-summary {
+  background-color: #2a2a2a;
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+.export-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.export-stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.375rem 0.5rem;
+  background-color: #1e1e1e;
+  border-radius: 4px;
+}
+
+.export-stat-label {
+  font-size: 0.875rem;
+  color: #888;
+}
+
+.export-stat-value {
+  font-size: 0.875rem;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+/* ============================================
+   Import Panel Styles
+   ============================================ */
+
+.import-button-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.import-button-wrapper {
+  position: relative;
+}
+
+.import-success {
+  padding: 1rem;
+  background-color: rgba(76, 175, 80, 0.1);
+  border-left: 4px solid #4CAF50;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.import-success p {
+  margin: 0;
+  color: #4CAF50;
+  font-size: 0.875rem;
+}
+
+.import-errors {
+  padding: 1rem;
+  background-color: rgba(244, 67, 54, 0.1);
+  border-left: 4px solid #f44336;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.import-errors h5 {
+  margin: 0 0 0.75rem;
+  color: #f44336;
+  font-size: 0.875rem;
+}
+
+.error-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 0.75rem;
+}
+
+.error-item {
+  padding: 0.5rem;
+  background-color: rgba(244, 67, 54, 0.05);
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  color: #f44336;
+  font-family: monospace;
+}
+
+.import-help {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: rgba(33, 150, 243, 0.1);
+  border-radius: 4px;
+}
+
+.import-help p {
+  margin: 0.5rem 0;
+  font-size: 0.75rem;
+  color: #ccc;
+}
+
+.import-help strong {
+  color: #2196F3;
+}
