@@ -4,6 +4,8 @@ import {
   Relationship,
   Group,
   Map,
+  Community,
+  CommunityDetectionResult,
   CreateMemberInput,
   UpdateMemberInput,
   CreateRelationshipInput,
@@ -241,6 +243,82 @@ export const mapsApi = {
 
   delete: async (id: string): Promise<void> => {
     await api.delete(`/maps/${id}`)
+  },
+}
+
+// ========================================
+// Community API
+// ========================================
+
+export const communityApi = {
+  /**
+   * コミュニティを再分析
+   */
+  refresh: async (mapId: string): Promise<CommunityDetectionResult> => {
+    const response = await api.post<ApiResponse<CommunityDetectionResult>>(
+      `/analysis/communities/refresh?mapId=${mapId}`
+    )
+    if (!response.data.data) throw new Error('Failed to refresh communities')
+    return response.data.data
+  },
+
+  /**
+   * コミュニティ一覧を取得
+   */
+  getAll: async (mapId: string): Promise<Community[]> => {
+    const response = await api.get<ApiResponse<Community[]>>(
+      `/analysis/communities?mapId=${mapId}`
+    )
+    return response.data.data || []
+  },
+
+  /**
+   * コミュニティ統計情報を取得
+   */
+  getStats: async (mapId: string) => {
+    const response = await api.get<ApiResponse<{
+      totalCommunities: number
+      averageSize: number
+      largestCommunitySize: number
+      smallestCommunitySize: number
+      modularity: number
+    }>>(`/analysis/communities/stats?mapId=${mapId}`)
+    if (!response.data.data) throw new Error('Failed to get community stats')
+    return response.data.data
+  },
+
+  /**
+   * 特定のコミュニティを取得
+   */
+  getById: async (mapId: string, id: string): Promise<Community> => {
+    const response = await api.get<ApiResponse<Community>>(
+      `/analysis/communities/${id}?mapId=${mapId}`
+    )
+    if (!response.data.data) throw new Error('Community not found')
+    return response.data.data
+  },
+
+  /**
+   * コミュニティを更新
+   */
+  update: async (
+    mapId: string,
+    id: string,
+    data: { name?: string; color?: string }
+  ): Promise<Community> => {
+    const response = await api.put<ApiResponse<Community>>(
+      `/analysis/communities/${id}?mapId=${mapId}`,
+      data
+    )
+    if (!response.data.data) throw new Error('Failed to update community')
+    return response.data.data
+  },
+
+  /**
+   * コミュニティを削除
+   */
+  delete: async (mapId: string, id: string): Promise<void> => {
+    await api.delete(`/analysis/communities/${id}?mapId=${mapId}`)
   },
 }
 
