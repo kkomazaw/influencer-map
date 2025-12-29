@@ -1,6 +1,7 @@
 export * from './member'
 export * from './relationship'
 export * from './community'
+export * from './centrality'
 export * from './group'
 export * from './map'
 export * from './api'

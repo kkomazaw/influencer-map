@@ -15,6 +15,9 @@ import {
   deleteCommunity,
   getCommunityStats,
 } from '../services/communityService.js'
+import { analyzeCentrality } from '../services/centralityService.js'
+import { memberRepository } from '../repositories/FirestoreMemberRepository.js'
+import { relationshipRepository } from '../repositories/FirestoreRelationshipRepository.js'
 import { mapService } from '../services/mapService.js'
 
 export class AnalysisController {
@@ -352,6 +355,66 @@ export class AnalysisController {
       res.status(500).json({
         success: false,
         error: { message: 'Failed to delete community', details: error },
+      })
+    }
+  }
+
+  /**
+   * 中心性分析を実行
+   * POST /api/analysis/centrality/calculate?mapId=xxx&topN=10
+   */
+  async calculateCentrality(req: AuthRequest, res: Response) {
+    try {
+      const userId = req.user?.uid
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: { message: 'Unauthorized' },
+        })
+      }
+
+      const mapId = req.query.mapId as string
+      const topN = req.query.topN ? parseInt(req.query.topN as string, 10) : 10
+
+      if (!mapId) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'mapId is required' },
+        })
+      }
+
+      // マップ所有権確認
+      const map = await mapService.getMapById(mapId)
+      if (!map) {
+        return res.status(404).json({
+          success: false,
+          error: { message: 'Map not found' },
+        })
+      }
+
+      if (map.ownerId !== userId) {
+        return res.status(403).json({
+          success: false,
+          error: { message: 'Forbidden: You do not own this map' },
+        })
+      }
+
+      // メンバーとリレーションシップを取得
+      const members = await memberRepository.findByMapId(mapId)
+      const relationships = await relationshipRepository.findByMapId(mapId)
+
+      // 中心性分析を実行
+      const result = await analyzeCentrality(mapId, members, relationships, topN)
+
+      res.json({
+        success: true,
+        data: result,
+      })
+    } catch (error) {
+      console.error('Error calculating centrality:', error)
+      res.status(500).json({
+        success: false,
+        error: { message: 'Failed to calculate centrality', details: error },
       })
     }
   }

@@ -46,11 +46,12 @@ router.delete('/communities/:id', (req, res) =>
 )
 
 /**
- * 中心性分析エンドポイント（Phase 2 Week 5で実装予定）
+ * 中心性分析エンドポイント
  */
 
-// TODO: Phase 2 Week 5
-// router.post('/centrality/calculate', ...)
-// router.get('/centrality/top', ...)
+// 中心性分析を計算
+router.post('/centrality/calculate', (req, res) =>
+  analysisController.calculateCentrality(req, res)
+)
 
 export default router
