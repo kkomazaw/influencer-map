@@ -20,7 +20,7 @@ export interface ImportResult<T> {
 /**
  * CSVテキストをパース
  */
-const parseCSV = (csvText: string): string[][] => {
+export const parseCSV = (csvText: string): string[][] => {
   const lines = csvText.trim().split('\n')
   const result: string[][] = []
 
