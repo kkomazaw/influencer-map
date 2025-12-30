@@ -208,56 +208,83 @@ const Dashboard: React.FC = () => {
             <button
               className={`tab ${activeTab === 'members' ? 'active' : ''}`}
               onClick={() => setActiveTab('members')}
+              title="メンバー"
             >
-              メンバー
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+              </svg>
             </button>
             <button
               className={`tab ${activeTab === 'relationships' ? 'active' : ''}`}
               onClick={() => setActiveTab('relationships')}
+              title="関係性"
             >
-              関係性
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd"/>
+              </svg>
             </button>
             <button
               className={`tab ${activeTab === 'groups' ? 'active' : ''}`}
               onClick={() => setActiveTab('groups')}
+              title="グループ"
             >
-              グループ
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/>
+              </svg>
             </button>
             <button
               className={`tab ${activeTab === 'communities' ? 'active' : ''}`}
               onClick={() => setActiveTab('communities')}
+              title="コミュニティ"
             >
-              コミュニティ
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
+              </svg>
             </button>
             <button
               className={`tab ${activeTab === 'centrality' ? 'active' : ''}`}
               onClick={() => setActiveTab('centrality')}
+              title="影響力分析"
             >
-              影響力分析
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+              </svg>
             </button>
             <button
               className={`tab ${activeTab === 'isolated' ? 'active' : ''}`}
               onClick={() => setActiveTab('isolated')}
+              title="孤立検出"
             >
-              孤立検出
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
+              </svg>
             </button>
             <button
               className={`tab ${activeTab === 'statistics' ? 'active' : ''}`}
               onClick={() => setActiveTab('statistics')}
+              title="統計情報"
             >
-              統計情報
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+              </svg>
             </button>
             <button
               className={`tab ${activeTab === 'filters' ? 'active' : ''}`}
               onClick={() => setActiveTab('filters')}
+              title="フィルタ"
             >
-              フィルタ
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clipRule="evenodd"/>
+              </svg>
             </button>
             <button
               className={`tab ${activeTab === 'export' ? 'active' : ''}`}
               onClick={() => setActiveTab('export')}
+              title="エクスポート"
             >
-              エクスポート
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z"/>
+              </svg>
             </button>
           </div>
 
