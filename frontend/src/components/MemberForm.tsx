@@ -64,9 +64,9 @@ const MemberForm: React.FC<MemberFormProps> = ({
       return
     }
 
-    // ファイルサイズ制限（5MB）
-    if (file.size > 5 * 1024 * 1024) {
-      alert('ファイルサイズは5MB以下にしてください')
+    // ファイルサイズ制限（1MB）
+    if (file.size > 1 * 1024 * 1024) {
+      alert('ファイルサイズは1MB以下にしてください。大きい画像は縮小してください。')
       return
     }
 
@@ -74,6 +74,7 @@ const MemberForm: React.FC<MemberFormProps> = ({
     const reader = new FileReader()
     reader.onload = (event) => {
       const base64 = event.target?.result as string
+      console.log('画像をBase64に変換しました。サイズ:', base64.length, '文字')
       setFormData((prev) => ({ ...prev, avatarUrl: base64 }))
     }
     reader.onerror = () => {

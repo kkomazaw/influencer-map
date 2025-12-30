@@ -50,7 +50,7 @@ app.use(cors({
   },
   credentials: true
 }))
-app.use(express.json())
+app.use(express.json({ limit: '2mb' })) // Allow larger payloads for Base64 images
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'))
 
 // Rate limiting
