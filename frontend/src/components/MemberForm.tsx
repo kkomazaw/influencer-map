@@ -26,6 +26,7 @@ const MemberForm: React.FC<MemberFormProps> = ({
     position: '',
     avatarUrl: '',
   })
+  const [avatarInputMethod, setAvatarInputMethod] = useState<'file' | 'url'>('file')
 
   useEffect(() => {
     if (editMode && initialData) {
@@ -51,6 +52,34 @@ const MemberForm: React.FC<MemberFormProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // 画像ファイルのみ許可
+    if (!file.type.startsWith('image/')) {
+      alert('画像ファイルを選択してください')
+      return
+    }
+
+    // ファイルサイズ制限（5MB）
+    if (file.size > 5 * 1024 * 1024) {
+      alert('ファイルサイズは5MB以下にしてください')
+      return
+    }
+
+    // ファイルをBase64に変換
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string
+      setFormData((prev) => ({ ...prev, avatarUrl: base64 }))
+    }
+    reader.onerror = () => {
+      alert('ファイルの読み込みに失敗しました')
+    }
+    reader.readAsDataURL(file)
   }
 
   return (
@@ -106,15 +135,55 @@ const MemberForm: React.FC<MemberFormProps> = ({
       </div>
 
       <div className="form-group">
-        <label htmlFor="avatarUrl">アバター画像URL</label>
-        <input
-          type="url"
-          id="avatarUrl"
-          name="avatarUrl"
-          value={formData.avatarUrl}
-          onChange={handleChange}
-          placeholder="https://example.com/avatar.jpg"
-        />
+        <label>アバター画像</label>
+
+        <div className="avatar-input-group">
+          <div className="avatar-input-method">
+            <label className="input-method-label">
+              <input
+                type="radio"
+                name="avatarInputMethod"
+                value="file"
+                checked={avatarInputMethod === 'file'}
+                onChange={(e) => setAvatarInputMethod(e.target.value as 'file' | 'url')}
+              />
+              ファイルから選択
+            </label>
+            <label className="input-method-label">
+              <input
+                type="radio"
+                name="avatarInputMethod"
+                value="url"
+                checked={avatarInputMethod === 'url'}
+                onChange={(e) => setAvatarInputMethod(e.target.value as 'file' | 'url')}
+              />
+              URLを入力
+            </label>
+          </div>
+
+          {avatarInputMethod === 'file' && (
+            <input
+              type="file"
+              id="avatarFile"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="file-input"
+            />
+          )}
+
+          {avatarInputMethod === 'url' && (
+            <input
+              type="url"
+              id="avatarUrl"
+              name="avatarUrl"
+              value={formData.avatarUrl}
+              onChange={handleChange}
+              placeholder="https://example.com/avatar.jpg"
+              className="url-input"
+            />
+          )}
+        </div>
+
         {formData.avatarUrl && (
           <div className="avatar-preview">
             <img src={formData.avatarUrl} alt="プレビュー" onError={(e) => { e.currentTarget.style.display = 'none' }} />
