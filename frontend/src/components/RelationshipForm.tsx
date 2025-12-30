@@ -98,9 +98,12 @@ const RelationshipForm: React.FC<RelationshipFormProps> = ({
       <div className="form-group">
         <label htmlFor="type">関係性の種類 *</label>
         <select id="type" name="type" value={formData.type} onChange={handleChange} required>
-          <option value="collaboration">協力関係</option>
-          <option value="reporting">報告関係</option>
-          <option value="mentoring">メンター関係</option>
+          <option value="reporting">報告</option>
+          <option value="collaboration">協力</option>
+          <option value="mentoring">メンター</option>
+          <option value="friendship">友人</option>
+          <option value="consulting">相談</option>
+          <option value="project">プロジェクト</option>
           <option value="other">その他</option>
         </select>
       </div>

@@ -1,4 +1,4 @@
-export type RelationshipType = 'collaboration' | 'reporting' | 'mentoring' | 'other'
+export type RelationshipType = 'reporting' | 'collaboration' | 'mentoring' | 'friendship' | 'consulting' | 'project' | 'other'
 export type RelationshipStrength = 1 | 2 | 3 | 4 | 5
 
 export interface Relationship {

@@ -198,8 +198,23 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
     return minSize + (maxSize - minSize) * normalizedScore
   }
 
+  // Helper: Convert English relationship type to Japanese display name
+  const getRelationshipDisplayName = (type: string): string => {
+    const typeMap: { [key: string]: string } = {
+      'reporting': '報告',
+      'collaboration': '協力',
+      'mentoring': 'メンター',
+      'friendship': '友人',
+      'consulting': '相談',
+      'project': 'プロジェクト',
+      'other': 'その他',
+    }
+    return typeMap[type] || type
+  }
+
   // Helper: Get edge color based on relationship type
   const getEdgeColor = (type: string): string => {
+    const displayName = getRelationshipDisplayName(type)
     const colors: { [key: string]: string } = {
       '報告': '#2196F3',       // Blue - Reporting
       '協力': '#4CAF50',       // Green - Collaboration
@@ -207,8 +222,9 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
       '友人': '#9C27B0',       // Purple - Friendship
       '相談': '#00BCD4',       // Cyan - Consulting
       'プロジェクト': '#FFC107', // Yellow - Project
+      'その他': '#888',         // Gray - Other
     }
-    return colors[type] || '#888'
+    return colors[displayName] || '#888'
   }
 
   // Helper: Get edge width based on strength
