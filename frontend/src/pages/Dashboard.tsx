@@ -108,42 +108,55 @@ const Dashboard: React.FC = () => {
     )
   }
 
+  const hasActiveFilters = !!(
+    filters.searchText ||
+    filters.departments.length > 0 ||
+    filters.positions.length > 0 ||
+    filters.relationshipTypes.length > 0 ||
+    filters.strengthRange[0] !== 1 ||
+    filters.strengthRange[1] !== 10
+  )
+
   return (
     <div className="dashboard">
       <header className="dashboard-header">
-        <div className="header-top">
+        <div className="dashboard-navbar">
           <button className="btn-back" onClick={() => navigate('/')}>
-            ← マップ一覧に戻る
+            ← 戻る
           </button>
-        </div>
-        <h1>Influencer Map</h1>
-        <p>組織関係性可視化ダッシュボード</p>
-        <div className="stats">
-          <span>メンバー: {members.length} {filteredMembers.length < members.length && `(表示: ${filteredMembers.length})`}</span>
-          <span>関係性: {relationships.length} {filteredRelationships.length < relationships.length && `(表示: ${filteredRelationships.length})`}</span>
-          <span>グループ: {groups.length}</span>
-        </div>
-        {(filters.searchText ||
-          filters.departments.length > 0 ||
-          filters.positions.length > 0 ||
-          filters.relationshipTypes.length > 0 ||
-          filters.strengthRange[0] !== 1 ||
-          filters.strengthRange[1] !== 10) && (
-          <div style={{
-            marginTop: '0.5rem',
-            padding: '0.5rem 1rem',
-            backgroundColor: 'rgba(255, 152, 0, 0.2)',
-            borderRadius: '4px',
-            fontSize: '0.875rem',
-            color: '#ff9800',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem',
-            justifyContent: 'space-between'
-          }}>
-            <span>⚠️ フィルタが適用されています。すべてのデータを表示するには「フィルタ」タブでクリアしてください。</span>
+
+          <div className="navbar-stats">
+            <div className="stat-item">
+              <span className="stat-icon">👥</span>
+              <span className="stat-value">{filteredMembers.length < members.length ? `${filteredMembers.length}/` : ''}{members.length}</span>
+              <span className="stat-label">メンバー</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-icon">🔗</span>
+              <span className="stat-value">{filteredRelationships.length < relationships.length ? `${filteredRelationships.length}/` : ''}{relationships.length}</span>
+              <span className="stat-label">関係性</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-icon">📁</span>
+              <span className="stat-value">{groups.length}</span>
+              <span className="stat-label">グループ</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-icon">🎯</span>
+              <span className="stat-value">{communities.length}</span>
+              <span className="stat-label">コミュニティ</span>
+            </div>
           </div>
-        )}
+
+          {hasActiveFilters && (
+            <div className="filter-indicator">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/>
+              </svg>
+              <span>フィルタ適用中</span>
+            </div>
+          )}
+        </div>
       </header>
 
       <main className="dashboard-main">
