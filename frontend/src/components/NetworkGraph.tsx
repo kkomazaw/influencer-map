@@ -46,14 +46,25 @@ const GRAPH_STYLESHEET = [
       'background-color': 'data(nodeColor)',
       label: 'data(label)',
       color: '#fff',
-      'text-valign': 'center',
+      'text-valign': 'bottom',
       'text-halign': 'center',
+      'text-margin-y': 5,
       'font-size': '12px',
       width: 'data(nodeSize)',
       height: 'data(nodeSize)',
       'border-width': 2,
       'border-color': '#fff',
       'border-opacity': 0.5,
+    },
+  },
+  {
+    selector: 'node[avatarUrl]',
+    style: {
+      'background-image': 'data(avatarUrl)',
+      'background-fit': 'cover',
+      'background-clip': 'none',
+      'border-width': 3,
+      'border-color': '#4CAF50',
     },
   },
   {
@@ -260,6 +271,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
           parent: memberGroup ? `group-${memberGroup.id}` : undefined,
           nodeColor: getNodeColor(member),
           nodeSize: getNodeSize(member.id),
+          avatarUrl: member.avatarUrl || undefined,
         },
       }
     }) as ElementDefinition[]

@@ -24,6 +24,7 @@ const MemberForm: React.FC<MemberFormProps> = ({
     email: '',
     department: '',
     position: '',
+    avatarUrl: '',
   })
 
   useEffect(() => {
@@ -34,6 +35,7 @@ const MemberForm: React.FC<MemberFormProps> = ({
         email: initialData.email,
         department: initialData.department || '',
         position: initialData.position || '',
+        avatarUrl: initialData.avatarUrl || '',
       })
     }
   }, [editMode, initialData, mapId])
@@ -42,7 +44,7 @@ const MemberForm: React.FC<MemberFormProps> = ({
     e.preventDefault()
     onSubmit(formData)
     if (!editMode) {
-      setFormData({ mapId, name: '', email: '', department: '', position: '' })
+      setFormData({ mapId, name: '', email: '', department: '', position: '', avatarUrl: '' })
     }
   }
 
@@ -101,6 +103,23 @@ const MemberForm: React.FC<MemberFormProps> = ({
           onChange={handleChange}
           placeholder="エンジニア"
         />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="avatarUrl">アバター画像URL</label>
+        <input
+          type="url"
+          id="avatarUrl"
+          name="avatarUrl"
+          value={formData.avatarUrl}
+          onChange={handleChange}
+          placeholder="https://example.com/avatar.jpg"
+        />
+        {formData.avatarUrl && (
+          <div className="avatar-preview">
+            <img src={formData.avatarUrl} alt="プレビュー" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+          </div>
+        )}
       </div>
 
       <div className="form-actions">
