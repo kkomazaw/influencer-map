@@ -69,7 +69,13 @@ export class FirestoreMemberRepository implements IMemberRepository {
    */
   async findByMapId(mapId: string): Promise<Member[]> {
     const snapshot = await this.getMembersCollection(mapId).get()
-    return snapshot.docs.map((doc) => this.mapDocToMember(doc))
+    const members = snapshot.docs.map((doc) => this.mapDocToMember(doc))
+    console.log('🟣 findByMapId - Loaded members from Firestore:', JSON.stringify(
+      members.map(m => ({ id: m.id, name: m.name, x: m.x, y: m.y })),
+      null,
+      2
+    ))
+    return members
   }
 
   /**
@@ -119,16 +125,22 @@ export class FirestoreMemberRepository implements IMemberRepository {
       throw new Error(`Member with id ${id} not found in map ${mapId}`)
     }
 
+    console.log('Updating member with data:', JSON.stringify(data, null, 2))
+
     // undefined値を除外してFirestoreに保存
     const updateData = removeUndefinedValues({
       ...data,
       updatedAt: Timestamp.now(),
     })
 
+    console.log('After removeUndefinedValues:', JSON.stringify(updateData, null, 2))
+
     await docRef.update(updateData)
 
     const updatedDoc = await docRef.get()
-    return this.mapDocToMember(updatedDoc)
+    const result = this.mapDocToMember(updatedDoc)
+    console.log('Updated member result:', JSON.stringify(result, null, 2))
+    return result
   }
 
   /**
@@ -171,6 +183,13 @@ export class FirestoreMemberRepository implements IMemberRepository {
    */
   private mapDocToMember(doc: FirebaseFirestore.DocumentSnapshot): Member {
     const data = doc.data()!
+    console.log('🔵 mapDocToMember - Firestore raw data:', {
+      id: doc.id,
+      x: data.x,
+      y: data.y,
+      hasX: data.x !== undefined,
+      hasY: data.y !== undefined,
+    })
     return {
       id: doc.id,
       mapId: data.mapId,
@@ -181,6 +200,8 @@ export class FirestoreMemberRepository implements IMemberRepository {
       avatarUrl: data.avatarUrl,
       centralityScore: data.centralityScore,
       communityId: data.communityId,
+      x: data.x,
+      y: data.y,
       createdAt: data.createdAt.toDate(),
       updatedAt: data.updatedAt.toDate(),
     }

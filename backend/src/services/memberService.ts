@@ -27,8 +27,12 @@ export class MemberService {
 
   async updateMember(mapId: string, id: string, input: UpdateMemberInput): Promise<Member | null> {
     try {
-      return await memberRepository.update(mapId, id, input)
+      console.log('memberService.updateMember called with:', JSON.stringify({ mapId, id, input }, null, 2))
+      const result = await memberRepository.update(mapId, id, input)
+      console.log('memberService.updateMember result:', JSON.stringify(result, null, 2))
+      return result
     } catch (error) {
+      console.error('memberService.updateMember ERROR:', error)
       return null
     }
   }

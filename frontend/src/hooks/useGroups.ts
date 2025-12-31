@@ -28,8 +28,46 @@ export const useGroups = (mapId?: string) => {
       if (!mapId) throw new Error('mapId is required')
       return groupsApi.update(id, input, mapId)
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['groups', mapId] })
+    onMutate: async ({ id, input }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['groups', mapId] })
+
+      // Snapshot the previous value
+      const previousGroups = queryClient.getQueryData(['groups', mapId])
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(['groups', mapId], (old: any) => {
+        if (!old) return old
+        return old.map((group: any) =>
+          group.id === id ? { ...group, ...input } : group
+        )
+      })
+
+      // Return a context object with the snapshotted value
+      return { previousGroups }
+    },
+    onError: (_err, _variables, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousGroups) {
+        queryClient.setQueryData(['groups', mapId], context.previousGroups)
+      }
+    },
+    onSuccess: (data, variables) => {
+      // Update cache with server response to ensure data consistency
+      queryClient.setQueryData(['groups', mapId], (old: any) => {
+        if (!old) return old
+        return old.map((group: any) =>
+          group.id === variables.id ? data : group
+        )
+      })
+
+      // Only invalidate if this is not a position-only update
+      const isPositionOnlyUpdate = variables.input.x !== undefined && variables.input.y !== undefined &&
+        Object.keys(variables.input).length === 2
+
+      if (!isPositionOnlyUpdate) {
+        queryClient.invalidateQueries({ queryKey: ['groups', mapId] })
+      }
     },
   })
 

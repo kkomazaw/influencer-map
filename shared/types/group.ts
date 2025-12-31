@@ -5,6 +5,8 @@ export interface Group {
   description?: string
   memberIds: string[]
   color?: string  // 枠の色
+  x?: number      // グラフ上のX座標
+  y?: number      // グラフ上のY座標
   createdAt: Date
   updatedAt: Date
 }
@@ -22,4 +24,6 @@ export interface UpdateGroupInput {
   description?: string
   memberIds?: string[]
   color?: string
+  x?: number
+  y?: number
 }

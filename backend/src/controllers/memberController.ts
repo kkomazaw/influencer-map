@@ -43,6 +43,12 @@ export class MemberController {
       }
 
       const members = await memberService.getAllMembers(mapId)
+
+      // Debug: Log first member to verify x, y are included
+      if (members.length > 0) {
+        console.log('Sample member data:', JSON.stringify(members[0], null, 2))
+      }
+
       res.json({ success: true, data: members })
     } catch (error) {
       res.status(500).json({
@@ -146,6 +152,8 @@ export class MemberController {
       const input: UpdateMemberInput = req.body
       const mapId = req.query.mapId as string
 
+      console.log('🔷 memberController.update called with:', { id, input, mapId })
+
       if (!mapId) {
         return res.status(400).json({
           success: false,
@@ -162,7 +170,9 @@ export class MemberController {
         })
       }
 
+      console.log('🔷 Calling memberService.updateMember...')
       const member = await memberService.updateMember(mapId, id, input)
+      console.log('🔷 memberService.updateMember returned:', member)
 
       if (!member) {
         return res.status(404).json({

@@ -131,6 +131,8 @@ export class FirestoreGroupRepository implements IGroupRepository {
       description: data.description,
       memberIds: data.memberIds ?? [],
       color: data.color,
+      x: data.x,
+      y: data.y,
       createdAt: data.createdAt.toDate(),
       updatedAt: data.updatedAt.toDate(),
     }

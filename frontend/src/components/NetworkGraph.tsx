@@ -1,6 +1,10 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react'
 import cytoscape, { Core, ElementDefinition } from 'cytoscape'
+import edgehandles from 'cytoscape-edgehandles'
 import { Member, Relationship, Group, Community, MemberCentralityScore } from '@shared/types'
+
+// Register edgehandles extension
+cytoscape.use(edgehandles)
 
 export type ColorMode = 'department' | 'community' | 'default'
 
@@ -12,7 +16,10 @@ interface NetworkGraphProps {
   centralityScores?: MemberCentralityScore[]
   colorMode?: ColorMode
   onNodeClick?: (memberId: string) => void
+  onNodeDelete?: (memberId: string) => void
+  onRelationshipCreate?: (sourceId: string, targetId: string) => void
   onGraphReady?: (cy: Core) => void
+  onNodePositionChange?: (nodeId: string, x: number, y: number) => void
 }
 
 // Cytoscape stylesheet - defined outside component to prevent recreation
@@ -62,7 +69,7 @@ const GRAPH_STYLESHEET = [
     style: {
       'background-image': 'data(avatarUrl)',
       'background-fit': 'cover',
-      'background-clip': 'none',
+      'background-clip': 'node',
       'border-width': 3,
       'border-color': '#4CAF50',
     },
@@ -105,6 +112,50 @@ const GRAPH_STYLESHEET = [
       'border-color': '#FF5722',
     },
   },
+  {
+    selector: '.eh-handle',
+    style: {
+      'background-color': '#4CAF50',
+      width: 12,
+      height: 12,
+      shape: 'ellipse',
+      'overlay-opacity': 0,
+      'border-width': 6,
+      'border-opacity': 0,
+    },
+  },
+  {
+    selector: '.eh-hover',
+    style: {
+      'background-color': '#4CAF50',
+    },
+  },
+  {
+    selector: '.eh-source',
+    style: {
+      'border-width': 4,
+      'border-color': '#4CAF50',
+    },
+  },
+  {
+    selector: '.eh-target',
+    style: {
+      'border-width': 4,
+      'border-color': '#4CAF50',
+    },
+  },
+  {
+    selector: '.eh-preview, .eh-ghost-edge',
+    style: {
+      'background-color': '#4CAF50',
+      'line-color': '#4CAF50',
+      'target-arrow-color': '#4CAF50',
+      'source-arrow-color': '#4CAF50',
+      width: 3,
+      'line-style': 'dashed',
+      'opacity': 0.7,
+    },
+  },
 ]
 
 // Layout configuration - constant to prevent recreation
@@ -135,6 +186,14 @@ interface TooltipData {
   content: React.ReactNode
 }
 
+interface ContextMenuData {
+  visible: boolean
+  x: number
+  y: number
+  memberId: string | null
+  memberName: string | null
+}
+
 const NetworkGraph: React.FC<NetworkGraphProps> = ({
   members,
   relationships,
@@ -143,17 +202,28 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
   centralityScores = [],
   colorMode = 'default',
   onNodeClick,
-  onGraphReady
+  onNodeDelete,
+  onRelationshipCreate,
+  onGraphReady,
+  onNodePositionChange
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const cyRef = useRef<Core | null>(null)
   const layoutRef = useRef<any>(null)
   const graphReadyCalledRef = useRef<boolean>(false)
+  const isDraggingRef = useRef<boolean>(false)
   const [tooltip, setTooltip] = useState<TooltipData>({
     visible: false,
     x: 0,
     y: 0,
     content: null,
+  })
+  const [contextMenu, setContextMenu] = useState<ContextMenuData>({
+    visible: false,
+    x: 0,
+    y: 0,
+    memberId: null,
+    memberName: null,
   })
 
   // Helper: Get department color
@@ -248,21 +318,42 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
 
   // Memoize group nodes
   const groupNodes = useMemo((): ElementDefinition[] => {
-    return groups.map((group) => ({
-      data: {
-        id: `group-${group.id}`,
-        label: group.name,
-        type: 'group',
-        color: group.color,
-      },
-    }))
+    return groups.map((group) => {
+      const groupData: any = {
+        data: {
+          id: `group-${group.id}`,
+          label: group.name,
+          type: 'group',
+          color: group.color,
+        },
+      }
+
+      // If group has saved position, use it
+      if (group.x !== undefined && group.y !== undefined) {
+        groupData.position = { x: group.x, y: group.y }
+      }
+
+      return groupData
+    })
   }, [groups])
 
   // Memoize member nodes
   const memberNodes = useMemo(() => {
-    return members.map((member) => {
+    console.log('🟢 Building member nodes from members:', members.length)
+    const nodes = members.map((member) => {
+      console.log('🟢 Member data:', {
+        id: member.id,
+        name: member.name,
+        x: member.x,
+        y: member.y,
+        hasX: member.x !== undefined,
+        hasY: member.y !== undefined,
+      })
+
       const memberGroup = groups.find((g) => g.memberIds.includes(member.id))
-      return {
+      const avatarUrl = member.avatarUrl && member.avatarUrl.trim() !== '' ? member.avatarUrl : undefined
+
+      const nodeData: any = {
         data: {
           id: member.id,
           label: member.name,
@@ -271,10 +362,23 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
           parent: memberGroup ? `group-${memberGroup.id}` : undefined,
           nodeColor: getNodeColor(member),
           nodeSize: getNodeSize(member.id),
-          avatarUrl: member.avatarUrl || undefined,
+          avatarUrl: avatarUrl,
         },
       }
+
+      // If member has saved position, use it
+      if (member.x !== undefined && member.y !== undefined) {
+        console.log('🟢 Using saved position for', member.name, ':', { x: member.x, y: member.y })
+        nodeData.position = { x: member.x, y: member.y }
+      } else {
+        console.log('🔴 No saved position for', member.name)
+      }
+
+      return nodeData
     }) as ElementDefinition[]
+
+    console.log('🟢 Built member nodes:', nodes.length)
+    return nodes
   }, [members, groups, colorMode, centralityScores, communities])
 
   // Memoize edges
@@ -299,46 +403,143 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
     return [...groupNodes, ...memberNodes, ...edges]
   }, [groupNodes, memberNodes, edges])
 
+  // Separate effect for component unmount cleanup
+  useEffect(() => {
+    return () => {
+      // Component is unmounting - destroy the graph
+      console.log('🔴 Component unmounting - destroying graph')
+      if (cyRef.current) {
+        try {
+          if (layoutRef.current) {
+            layoutRef.current.stop()
+            layoutRef.current = null
+          }
+          cyRef.current.removeAllListeners()
+          cyRef.current.destroy()
+        } catch (e) {
+          // Ignore errors during cleanup
+        }
+        cyRef.current = null
+      }
+    }
+  }, []) // Empty deps - only runs on mount/unmount
+
   useEffect(() => {
     if (!containerRef.current) return
 
     let mounted = true
 
-    // Destroy existing graph if it exists
-    if (cyRef.current) {
-      try {
-        // Stop any running layout
-        if (layoutRef.current) {
-          layoutRef.current.stop()
-          layoutRef.current = null
-        }
-        cyRef.current.removeAllListeners()
-        cyRef.current.destroy()
-      } catch (e) {
-        // Ignore errors during cleanup
-      }
-      cyRef.current = null
+    console.log('NetworkGraph useEffect triggered, elements count:', elements.length)
+    console.log('members count:', members.length)
+    console.log('isDraggingRef.current:', isDraggingRef.current)
+
+    // Skip updates while dragging to prevent position overwrite
+    if (isDraggingRef.current) {
+      console.log('⚠️ Skipping update because isDraggingRef is true')
+      return
     }
 
-    // Initialize Cytoscape
+    // If graph exists, just update elements instead of recreating
+    if (cyRef.current) {
+      try {
+        console.log('✅ Updating existing graph')
+        // Get current elements
+        const currentElements = cyRef.current.elements()
+        console.log('Current cytoscape elements:', currentElements.length)
+
+        // Remove elements that no longer exist
+        currentElements.forEach((ele: any) => {
+          const stillExists = elements.some((e: any) => e.data.id === ele.id())
+          if (!stillExists) {
+            console.log('Removing element:', ele.id())
+            ele.remove()
+          }
+        })
+
+        // Add or update elements
+        elements.forEach((eleData: any) => {
+          const existing = cyRef.current!.$id(eleData.data.id)
+          if (existing.length > 0) {
+            // Update existing element data
+            existing.data(eleData.data)
+            // Only update position if it's provided
+            if (eleData.position) {
+              const currentPos = existing.position()
+              // Only update if position has changed significantly (more than 0.1 pixel)
+              const posChanged = Math.abs(currentPos.x - eleData.position.x) > 0.1 ||
+                                Math.abs(currentPos.y - eleData.position.y) > 0.1
+              if (posChanged) {
+                console.log(`Updating position for ${eleData.data.id} from (${currentPos.x}, ${currentPos.y}) to (${eleData.position.x}, ${eleData.position.y})`)
+                existing.position(eleData.position)
+              }
+            }
+            if (eleData.classes) {
+              existing.classes(eleData.classes)
+            }
+          } else {
+            // Add new element
+            console.log('Adding new element:', eleData.data.id)
+            cyRef.current!.add(eleData)
+          }
+        })
+
+        console.log('✅ Graph update complete')
+        return
+      } catch (e) {
+        console.error('Failed to update elements, reinitializing graph:', e)
+        // Destroy the broken graph before reinitializing
+        try {
+          if (layoutRef.current) {
+            layoutRef.current.stop()
+            layoutRef.current = null
+          }
+          cyRef.current.removeAllListeners()
+          cyRef.current.destroy()
+        } catch (destroyError) {
+          // Ignore errors during cleanup
+        }
+        cyRef.current = null
+        // Fall through to reinitialization
+      }
+    }
+
+    // Initialize Cytoscape (only if graph doesn't exist or update failed)
+    console.log('🟡 Initializing new graph')
     cyRef.current = cytoscape({
       container: containerRef.current,
       elements: elements,
       style: GRAPH_STYLESHEET as any,
     })
 
-    // Run layout and save instance
-    layoutRef.current = cyRef.current.layout(LAYOUT_CONFIG)
-
-    // Only run layout if still mounted
-    if (mounted) {
-      layoutRef.current.run()
-
-      // Notify parent that graph is ready (only once)
-      if (onGraphReady && cyRef.current && !graphReadyCalledRef.current) {
-        graphReadyCalledRef.current = true
-        onGraphReady(cyRef.current)
+    // Check if all nodes (not edges) have saved positions
+    const allNodesHavePositions = elements.every((ele: any) => {
+      // Skip edges (they have source and target)
+      if (ele.data && (ele.data.source || ele.data.target)) {
+        return true
       }
+      // For nodes, check if position is defined
+      return ele.position !== undefined
+    })
+
+    console.log('All nodes have positions?', allNodesHavePositions)
+
+    // Only run layout if nodes don't have saved positions
+    if (!allNodesHavePositions) {
+      console.log('Running layout because not all nodes have positions')
+      layoutRef.current = cyRef.current.layout(LAYOUT_CONFIG)
+
+      // Only run layout if still mounted
+      if (mounted) {
+        layoutRef.current.run()
+      }
+    } else {
+      console.log('Skipping layout because all nodes have saved positions')
+    }
+
+    // Notify parent that graph is ready (only once)
+    if (onGraphReady && cyRef.current && !graphReadyCalledRef.current && mounted) {
+      graphReadyCalledRef.current = true
+      onGraphReady(cyRef.current)
     }
 
     // Handle node clicks (only for member nodes, not groups)
@@ -426,26 +627,125 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
       setTooltip({ visible: false, x: 0, y: 0, content: null })
     })
 
+    // Handle right-click on nodes (context menu)
+    cyRef.current.on('cxttap', 'node[!type]', (event) => {
+      if (!mounted) return
+      const node = event.target
+      const nodeId = node.id()
+      const member = members.find((m) => m.id === nodeId)
+
+      if (!member) return
+
+      const position = event.renderedPosition
+      setContextMenu({
+        visible: true,
+        x: position.x,
+        y: position.y,
+        memberId: nodeId,
+        memberName: member.name,
+      })
+      // Hide tooltip when context menu is shown
+      setTooltip({ visible: false, x: 0, y: 0, content: null })
+    })
+
+    // Close context menu on any other click
+    cyRef.current.on('tap', (event) => {
+      if (!mounted) return
+      // Only close if clicking on background (not on a node)
+      if (event.target === cyRef.current) {
+        setContextMenu({ visible: false, x: 0, y: 0, memberId: null, memberName: null })
+      }
+    })
+
+    // Initialize edgehandles for drag-and-drop edge creation
+    if (onRelationshipCreate) {
+      const eh = cyRef.current.edgehandles({
+        canConnect: function (sourceNode: any, targetNode: any) {
+          // Prevent connecting a node to itself
+          if (sourceNode.id() === targetNode.id()) return false
+          // Only allow connecting member nodes (not groups)
+          if (sourceNode.data('type') || targetNode.data('type')) return false
+          return true
+        },
+        edgeParams: function (sourceNode: any, targetNode: any) {
+          // Return temporary edge styling
+          return {
+            data: {
+              source: sourceNode.id(),
+              target: targetNode.id(),
+            },
+            classes: 'eh-preview',
+          }
+        },
+        hoverDelay: 150,
+        snap: true,
+        snapThreshold: 50,
+        snapFrequency: 15,
+        noEdgeEventsInDraw: true,
+        disableBrowserGestures: true,
+      })
+
+      // Handle edge creation completion
+      cyRef.current.on('ehcomplete', (event: any, sourceNode: any, targetNode: any, addedEdge: any) => {
+        if (!mounted) return
+
+        // Remove the temporary edge
+        if (addedEdge) {
+          addedEdge.remove()
+        }
+
+        const sourceId = sourceNode.id()
+        const targetId = targetNode.id()
+
+        // Call the callback to show relationship creation dialog
+        if (onRelationshipCreate) {
+          onRelationshipCreate(sourceId, targetId)
+        }
+      })
+    }
+
+    // Handle node drag start
+    cyRef.current.on('grab', 'node', () => {
+      console.log('🔴 Drag started - setting isDraggingRef to true')
+      isDraggingRef.current = true
+    })
+
+    // Handle node position changes (drag)
+    if (onNodePositionChange) {
+      cyRef.current.on('dragfree', 'node', (event) => {
+        if (!mounted) return
+        const node = event.target
+        const nodeId = node.id()
+        const position = node.position()
+
+        console.log('🟡 dragfree event:', nodeId, 'position:', position)
+
+        // Save position
+        if (nodeId && position) {
+          console.log('🟡 Calling onNodePositionChange with:', { x: position.x, y: position.y })
+          onNodePositionChange(nodeId, position.x, position.y)
+        }
+
+        // Reset dragging flag after a delay to allow the API call to complete
+        setTimeout(() => {
+          console.log('🟢 Drag ended - setting isDraggingRef to false')
+          isDraggingRef.current = false
+        }, 500)
+      })
+    }
+
     return () => {
       mounted = false
+      // Only remove listeners on dependency change, don't destroy graph
       if (cyRef.current) {
         try {
-          // Stop any running layout
-          if (layoutRef.current) {
-            layoutRef.current.stop()
-            layoutRef.current = null
-          }
-          // Remove all event listeners
           cyRef.current.removeAllListeners()
-          // Destroy the graph
-          cyRef.current.destroy()
         } catch (e) {
           // Ignore errors during cleanup
         }
-        cyRef.current = null
       }
     }
-  }, [elements, onNodeClick])
+  }, [elements, onNodeClick, onRelationshipCreate, onNodePositionChange, members, centralityScores])
 
   return (
     <>
@@ -469,6 +769,61 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
           }}
         >
           {tooltip.content}
+        </div>
+      )}
+      {contextMenu.visible && (
+        <div
+          className="graph-context-menu"
+          style={{
+            position: 'absolute',
+            left: `${contextMenu.x}px`,
+            top: `${contextMenu.y}px`,
+            zIndex: 1001,
+            backgroundColor: '#2d2d2d',
+            border: '1px solid #444',
+            borderRadius: '4px',
+            padding: '4px 0',
+            minWidth: '150px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          }}
+        >
+          <div
+            style={{
+              padding: '8px 16px',
+              fontSize: '12px',
+              color: '#999',
+              borderBottom: '1px solid #444',
+            }}
+          >
+            {contextMenu.memberName}
+          </div>
+          <button
+            className="context-menu-item"
+            onClick={() => {
+              if (onNodeDelete && contextMenu.memberId) {
+                onNodeDelete(contextMenu.memberId)
+              }
+              setContextMenu({ visible: false, x: 0, y: 0, memberId: null, memberName: null })
+            }}
+            style={{
+              width: '100%',
+              padding: '8px 16px',
+              border: 'none',
+              background: 'transparent',
+              color: '#ff5252',
+              textAlign: 'left',
+              cursor: 'pointer',
+              fontSize: '14px',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#3d3d3d'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent'
+            }}
+          >
+            🗑️ 削除
+          </button>
         </div>
       )}
     </>

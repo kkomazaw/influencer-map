@@ -32,6 +32,24 @@ const Dashboard: React.FC = () => {
   const [colorMode, setColorMode] = useState<ColorMode>('default')
   const [centralityResult, setCentralityResult] = useState<CentralityAnalysisResult | null>(null)
   const [cyInstance, setCyInstance] = useState<any>(null)
+  const [relationshipDialog, setRelationshipDialog] = useState<{
+    visible: boolean
+    sourceId: string | null
+    targetId: string | null
+  }>({
+    visible: false,
+    sourceId: null,
+    targetId: null,
+  })
+  const [relationshipForm, setRelationshipForm] = useState<{
+    type: string
+    strength: number
+    bidirectional: boolean
+  }>({
+    type: 'collaboration',
+    strength: 5,
+    bidirectional: false,
+  })
 
   const { members, isLoading: membersLoading, createMember, updateMember: updateMemberApi, deleteMember, isCreating, isUpdating } = useMembers(mapId)
   const { relationships, isLoading: relsLoading, createRelationship, deleteRelationship, isCreating: isCreatingRel } = useRelationships(mapId)
@@ -57,38 +75,44 @@ const Dashboard: React.FC = () => {
     socketService.connect()
 
     // Listen to real-time events
-    socketService.on('member:created', (data: unknown) => {
-      addMember(data as Member)
+    socketService.on('member:created', (payload: unknown) => {
+      const data = payload as { data: Member }
+      addMember(data.data)
     })
-    socketService.on('member:updated', (data: unknown) => {
-      const member = data as Member
-      updateMember(member.id, member)
+    socketService.on('member:updated', (payload: unknown) => {
+      const data = payload as { data: Member }
+      // Skip WebSocket updates for position changes - they're handled by optimistic updates
+      // This prevents race conditions between optimistic updates and WebSocket events
+      // Note: We'll still get the updated position on next page load from the server
     })
-    socketService.on('member:deleted', (data: unknown) => {
-      const payload = data as { id: string }
-      removeMember(payload.id)
+    socketService.on('member:deleted', (payload: unknown) => {
+      const data = payload as { data: { id: string } }
+      removeMember(data.data.id)
     })
-    socketService.on('relationship:created', (data: unknown) => {
-      addRelationship(data as Relationship)
+    socketService.on('relationship:created', (payload: unknown) => {
+      const data = payload as { data: Relationship }
+      addRelationship(data.data)
     })
-    socketService.on('relationship:updated', (data: unknown) => {
-      const relationship = data as Relationship
-      updateRelationship(relationship.id, relationship)
+    socketService.on('relationship:updated', (payload: unknown) => {
+      const data = payload as { data: Relationship }
+      updateRelationship(data.data.id, data.data)
     })
-    socketService.on('relationship:deleted', (data: unknown) => {
-      const payload = data as { id: string }
-      removeRelationship(payload.id)
+    socketService.on('relationship:deleted', (payload: unknown) => {
+      const data = payload as { data: { id: string } }
+      removeRelationship(data.data.id)
     })
-    socketService.on('group:created', (data: unknown) => {
-      addGroup(data as Group)
+    socketService.on('group:created', (payload: unknown) => {
+      const data = payload as { data: Group }
+      addGroup(data.data)
     })
-    socketService.on('group:updated', (data: unknown) => {
-      const group = data as Group
-      updateGroup(group.id, group)
+    socketService.on('group:updated', (payload: unknown) => {
+      const data = payload as { data: Group }
+      // Skip WebSocket updates for position changes - they're handled by optimistic updates
+      // This prevents race conditions between optimistic updates and WebSocket events
     })
-    socketService.on('group:deleted', (data: unknown) => {
-      const payload = data as { id: string }
-      removeGroup(payload.id)
+    socketService.on('group:deleted', (payload: unknown) => {
+      const data = payload as { data: { id: string } }
+      removeGroup(data.data.id)
     })
 
     return () => {
@@ -98,6 +122,79 @@ const Dashboard: React.FC = () => {
 
   const handleNodeClick = (memberId: string) => {
     setSelectedMemberId(memberId === selectedMemberId ? null : memberId)
+  }
+
+  const handleNodeDelete = async (memberId: string) => {
+    const member = members.find((m) => m.id === memberId)
+    if (!member) return
+
+    const confirmed = window.confirm(`「${member.name}」を削除してもよろしいですか？`)
+    if (!confirmed) return
+
+    try {
+      await deleteMember(memberId)
+      setSelectedMemberId(null) // Clear selection if deleted member was selected
+    } catch (error) {
+      console.error('Failed to delete member:', error)
+      alert('メンバーの削除に失敗しました。')
+    }
+  }
+
+  const handleRelationshipCreate = (sourceId: string, targetId: string) => {
+    setRelationshipDialog({
+      visible: true,
+      sourceId,
+      targetId,
+    })
+    // Reset form to defaults
+    setRelationshipForm({
+      type: 'collaboration',
+      strength: 5,
+      bidirectional: false,
+    })
+  }
+
+  const handleRelationshipSubmit = async () => {
+    if (!mapId || !relationshipDialog.sourceId || !relationshipDialog.targetId) return
+
+    try {
+      await createRelationship({
+        mapId,
+        sourceId: relationshipDialog.sourceId,
+        targetId: relationshipDialog.targetId,
+        type: relationshipForm.type,
+        strength: relationshipForm.strength,
+        bidirectional: relationshipForm.bidirectional,
+      })
+      setRelationshipDialog({ visible: false, sourceId: null, targetId: null })
+    } catch (error) {
+      console.error('Failed to create relationship:', error)
+      alert('関係性の作成に失敗しました。')
+    }
+  }
+
+  const handleRelationshipCancel = () => {
+    setRelationshipDialog({ visible: false, sourceId: null, targetId: null })
+  }
+
+  const handleNodePositionChange = async (nodeId: string, x: number, y: number) => {
+    console.log('handleNodePositionChange called:', nodeId, x, y)
+    // Check if it's a group node (groups have prefix "group-")
+    if (nodeId.startsWith('group-')) {
+      const groupId = nodeId.replace('group-', '')
+      console.log('Updating group position:', groupId, { x, y })
+      updateGroupApi({
+        id: groupId,
+        input: { x, y }
+      })
+    } else {
+      // It's a member node
+      console.log('Updating member position:', nodeId, { x, y })
+      updateMemberApi({
+        id: nodeId,
+        input: { x, y }
+      })
+    }
   }
 
   if (membersLoading || relsLoading || groupsLoading || communitiesLoading) {
@@ -178,7 +275,10 @@ const Dashboard: React.FC = () => {
             centralityScores={centralityResult?.scores}
             colorMode={colorMode}
             onNodeClick={handleNodeClick}
+            onNodeDelete={handleNodeDelete}
+            onRelationshipCreate={handleRelationshipCreate}
             onGraphReady={setCyInstance}
+            onNodePositionChange={handleNodePositionChange}
           />
           {selectedMemberId && (
             <div className="member-detail-overlay">
@@ -452,6 +552,157 @@ const Dashboard: React.FC = () => {
           </div>
         </aside>
       </main>
+
+      {/* Relationship Creation Dialog */}
+      {relationshipDialog.visible && (
+        <div
+          className="modal-overlay"
+          onClick={handleRelationshipCancel}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000,
+          }}
+        >
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: '#2d2d2d',
+              borderRadius: '8px',
+              padding: '24px',
+              minWidth: '400px',
+              maxWidth: '500px',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+            }}
+          >
+            <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#fff' }}>
+              関係性を追加
+            </h3>
+            <div style={{ marginBottom: '16px', color: '#aaa', fontSize: '14px' }}>
+              {relationshipDialog.sourceId &&
+                relationshipDialog.targetId &&
+                (() => {
+                  const source = members.find((m) => m.id === relationshipDialog.sourceId)
+                  const target = members.find((m) => m.id === relationshipDialog.targetId)
+                  return `${source?.name} → ${target?.name}`
+                })()}
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label
+                htmlFor="relationship-type"
+                style={{ display: 'block', marginBottom: '8px', color: '#fff' }}
+              >
+                関係の種類
+              </label>
+              <select
+                id="relationship-type"
+                value={relationshipForm.type}
+                onChange={(e) =>
+                  setRelationshipForm({ ...relationshipForm, type: e.target.value })
+                }
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  borderRadius: '4px',
+                  border: '1px solid #555',
+                  backgroundColor: '#1e1e1e',
+                  color: '#fff',
+                }}
+              >
+                <option value="collaboration">協力</option>
+                <option value="reporting">報告</option>
+                <option value="mentoring">メンター</option>
+                <option value="friendship">友人</option>
+                <option value="consulting">相談</option>
+                <option value="project">プロジェクト</option>
+                <option value="other">その他</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label
+                htmlFor="relationship-strength"
+                style={{ display: 'block', marginBottom: '8px', color: '#fff' }}
+              >
+                強度: {relationshipForm.strength}
+              </label>
+              <input
+                id="relationship-strength"
+                type="range"
+                min="1"
+                max="10"
+                value={relationshipForm.strength}
+                onChange={(e) =>
+                  setRelationshipForm({
+                    ...relationshipForm,
+                    strength: parseInt(e.target.value),
+                  })
+                }
+                style={{ width: '100%' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', color: '#fff', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={relationshipForm.bidirectional}
+                  onChange={(e) =>
+                    setRelationshipForm({
+                      ...relationshipForm,
+                      bidirectional: e.target.checked,
+                    })
+                  }
+                  style={{ marginRight: '8px' }}
+                />
+                双方向の関係
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={handleRelationshipCancel}
+                className="btn btn-secondary"
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  backgroundColor: '#555',
+                  color: '#fff',
+                  cursor: 'pointer',
+                }}
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleRelationshipSubmit}
+                className="btn btn-primary"
+                disabled={isCreatingRel}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  backgroundColor: '#4CAF50',
+                  color: '#fff',
+                  cursor: isCreatingRel ? 'not-allowed' : 'pointer',
+                  opacity: isCreatingRel ? 0.6 : 1,
+                }}
+              >
+                {isCreatingRel ? '作成中...' : '作成'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

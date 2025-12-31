@@ -8,6 +8,8 @@ export interface Member {
   avatarUrl?: string
   centralityScore?: number  // 中心性スコア（計算後に設定）
   communityId?: string      // 所属コミュニティID（分析後に設定）
+  x?: number                // グラフ上のX座標
+  y?: number                // グラフ上のY座標
   createdAt: Date
   updatedAt: Date
 }
@@ -27,4 +29,6 @@ export interface UpdateMemberInput {
   department?: string
   position?: string
   avatarUrl?: string
+  x?: number
+  y?: number
 }
