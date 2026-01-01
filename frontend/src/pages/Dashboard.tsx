@@ -121,7 +121,29 @@ const Dashboard: React.FC = () => {
   }, [])
 
   const handleNodeClick = (memberId: string) => {
-    setSelectedMemberId(memberId === selectedMemberId ? null : memberId)
+    console.log('🟡 Dashboard.handleNodeClick called with:', memberId)
+    console.log('🟡 Current selectedMemberId:', selectedMemberId)
+    console.log('🟡 Current activeTab:', activeTab)
+
+    // Toggle selection
+    const newSelectedId = memberId === selectedMemberId ? null : memberId
+    setSelectedMemberId(newSelectedId)
+    console.log('🟡 New selectedMemberId:', newSelectedId)
+
+    // If a member is selected, switch to members tab and set editing
+    if (newSelectedId) {
+      const member = members.find((m) => m.id === newSelectedId)
+      console.log('🟡 Found member:', member)
+      if (member) {
+        console.log('🟢 Dashboard: Switching to members tab and setting editing member')
+        setActiveTab('members')
+        setEditingMember(member)
+      }
+    } else {
+      // If deselected, clear editing
+      console.log('🟡 Dashboard: Clearing editing member')
+      setEditingMember(null)
+    }
   }
 
   const handleNodeDelete = async (memberId: string) => {
@@ -134,6 +156,7 @@ const Dashboard: React.FC = () => {
     try {
       await deleteMember(memberId)
       setSelectedMemberId(null) // Clear selection if deleted member was selected
+      setEditingMember(null) // Clear editing state
     } catch (error) {
       console.error('Failed to delete member:', error)
       alert('メンバーの削除に失敗しました。')
@@ -280,7 +303,7 @@ const Dashboard: React.FC = () => {
             onGraphReady={setCyInstance}
             onNodePositionChange={handleNodePositionChange}
           />
-          {selectedMemberId && (
+          {selectedMemberId && !editingMember && (
             <div className="member-detail-overlay">
               <div className="member-detail-panel">
                 <button
@@ -398,11 +421,15 @@ const Dashboard: React.FC = () => {
                     if (editingMember) {
                       updateMemberApi({ id: editingMember.id, input })
                       setEditingMember(null)
+                      setSelectedMemberId(null)
                     } else {
                       createMember(input)
                     }
                   }}
-                  onCancel={editingMember ? () => setEditingMember(null) : undefined}
+                  onCancel={editingMember ? () => {
+                    setEditingMember(null)
+                    setSelectedMemberId(null)
+                  } : undefined}
                   isLoading={editingMember ? isUpdating : isCreating}
                   editMode={!!editingMember}
                   initialData={editingMember || undefined}

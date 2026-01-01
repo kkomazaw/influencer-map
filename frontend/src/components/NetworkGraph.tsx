@@ -484,7 +484,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
         })
 
         console.log('✅ Graph update complete')
-        return
+        // Don't return - continue to re-setup event handlers
       } catch (e) {
         console.error('Failed to update elements, reinitializing graph:', e)
         // Destroy the broken graph before reinitializing
@@ -504,56 +504,59 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
     }
 
     // Initialize Cytoscape (only if graph doesn't exist or update failed)
-    console.log('🟡 Initializing new graph')
-    cyRef.current = cytoscape({
-      container: containerRef.current,
-      elements: elements,
-      style: GRAPH_STYLESHEET as any,
-    })
-
-    // Check if all nodes (not edges) have saved positions
-    const allNodesHavePositions = elements.every((ele: any) => {
-      // Skip edges (they have source and target)
-      if (ele.data && (ele.data.source || ele.data.target)) {
-        return true
-      }
-      // For nodes, check if position is defined
-      return ele.position !== undefined
-    })
-
-    console.log('All nodes have positions?', allNodesHavePositions)
-
-    // Only run layout if nodes don't have saved positions
-    if (!allNodesHavePositions) {
-      console.log('Running layout because not all nodes have positions')
-      layoutRef.current = cyRef.current.layout(LAYOUT_CONFIG)
-
-      // Only run layout if still mounted
-      if (mounted) {
-        layoutRef.current.run()
-      }
-    } else {
-      console.log('Skipping layout because all nodes have saved positions')
-    }
-
-    // Notify parent that graph is ready (only once)
-    if (onGraphReady && cyRef.current && !graphReadyCalledRef.current && mounted) {
-      graphReadyCalledRef.current = true
-      onGraphReady(cyRef.current)
-    }
-
-    // Handle node clicks (only for member nodes, not groups)
-    if (onNodeClick && mounted) {
-      cyRef.current.on('tap', 'node[!type]', (event) => {
-        if (!mounted) return
-        const nodeId = event.target.id()
-        onNodeClick(nodeId)
+    if (!cyRef.current) {
+      console.log('🟡 Initializing new graph')
+      cyRef.current = cytoscape({
+        container: containerRef.current,
+        elements: elements,
+        style: GRAPH_STYLESHEET as any,
       })
+
+      // Check if all nodes (not edges) have saved positions
+      const allNodesHavePositions = elements.every((ele: any) => {
+        // Skip edges (they have source and target)
+        if (ele.data && (ele.data.source || ele.data.target)) {
+          return true
+        }
+        // For nodes, check if position is defined
+        return ele.position !== undefined
+      })
+
+      console.log('All nodes have positions?', allNodesHavePositions)
+
+      // Only run layout if nodes don't have saved positions
+      if (!allNodesHavePositions) {
+        console.log('Running layout because not all nodes have positions')
+        layoutRef.current = cyRef.current.layout(LAYOUT_CONFIG)
+
+        // Only run layout if still mounted
+        if (mounted) {
+          layoutRef.current.run()
+        }
+      } else {
+        console.log('Skipping layout because all nodes have saved positions')
+      }
+
+      // Notify parent that graph is ready (only once)
+      if (onGraphReady && cyRef.current && !graphReadyCalledRef.current && mounted) {
+        graphReadyCalledRef.current = true
+        onGraphReady(cyRef.current)
+      }
     }
+
+    return () => {
+      mounted = false
+    }
+  }, [elements])
+
+  // Separate useEffect for interactive event handlers
+  useEffect(() => {
+    if (!cyRef.current) return
+
+    console.log('🔵 Setting up interactive event handlers')
 
     // Handle node hover tooltip
-    cyRef.current.on('mouseover', 'node[!type]', (event) => {
-      if (!mounted) return
+    const handleNodeMouseOver = (event: any) => {
       const node = event.target
       const nodeId = node.id()
       const member = members.find((m) => m.id === nodeId)
@@ -565,7 +568,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
       setTooltip({
         visible: true,
         x: position.x,
-        y: position.y - 50, // Position above the node
+        y: position.y - 50,
         content: (
           <div className="graph-tooltip">
             <div className="tooltip-header">{member.name}</div>
@@ -582,16 +585,14 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
           </div>
         ),
       })
-    })
+    }
 
-    cyRef.current.on('mouseout', 'node[!type]', () => {
-      if (!mounted) return
+    const handleNodeMouseOut = () => {
       setTooltip({ visible: false, x: 0, y: 0, content: null })
-    })
+    }
 
     // Handle edge hover tooltip
-    cyRef.current.on('mouseover', 'edge', (event) => {
-      if (!mounted) return
+    const handleEdgeMouseOver = (event: any) => {
       const edge = event.target
       const sourceId = edge.data('source')
       const targetId = edge.data('target')
@@ -620,16 +621,14 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
           </div>
         ),
       })
-    })
+    }
 
-    cyRef.current.on('mouseout', 'edge', () => {
-      if (!mounted) return
+    const handleEdgeMouseOut = () => {
       setTooltip({ visible: false, x: 0, y: 0, content: null })
-    })
+    }
 
     // Handle right-click on nodes (context menu)
-    cyRef.current.on('cxttap', 'node[!type]', (event) => {
-      if (!mounted) return
+    const handleContextMenu = (event: any) => {
       const node = event.target
       const nodeId = node.id()
       const member = members.find((m) => m.id === nodeId)
@@ -644,108 +643,179 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
         memberId: nodeId,
         memberName: member.name,
       })
-      // Hide tooltip when context menu is shown
       setTooltip({ visible: false, x: 0, y: 0, content: null })
-    })
+    }
 
-    // Close context menu on any other click
-    cyRef.current.on('tap', (event) => {
-      if (!mounted) return
-      // Only close if clicking on background (not on a node)
+    // Close context menu on background click
+    const handleBackgroundTap = (event: any) => {
       if (event.target === cyRef.current) {
         setContextMenu({ visible: false, x: 0, y: 0, memberId: null, memberName: null })
       }
-    })
-
-    // Initialize edgehandles for drag-and-drop edge creation
-    if (onRelationshipCreate) {
-      const eh = cyRef.current.edgehandles({
-        canConnect: function (sourceNode: any, targetNode: any) {
-          // Prevent connecting a node to itself
-          if (sourceNode.id() === targetNode.id()) return false
-          // Only allow connecting member nodes (not groups)
-          if (sourceNode.data('type') || targetNode.data('type')) return false
-          return true
-        },
-        edgeParams: function (sourceNode: any, targetNode: any) {
-          // Return temporary edge styling
-          return {
-            data: {
-              source: sourceNode.id(),
-              target: targetNode.id(),
-            },
-            classes: 'eh-preview',
-          }
-        },
-        hoverDelay: 150,
-        snap: true,
-        snapThreshold: 50,
-        snapFrequency: 15,
-        noEdgeEventsInDraw: true,
-        disableBrowserGestures: true,
-      })
-
-      // Handle edge creation completion
-      cyRef.current.on('ehcomplete', (event: any, sourceNode: any, targetNode: any, addedEdge: any) => {
-        if (!mounted) return
-
-        // Remove the temporary edge
-        if (addedEdge) {
-          addedEdge.remove()
-        }
-
-        const sourceId = sourceNode.id()
-        const targetId = targetNode.id()
-
-        // Call the callback to show relationship creation dialog
-        if (onRelationshipCreate) {
-          onRelationshipCreate(sourceId, targetId)
-        }
-      })
     }
 
-    // Handle node drag start
-    cyRef.current.on('grab', 'node', () => {
-      console.log('🔴 Drag started - setting isDraggingRef to true')
-      isDraggingRef.current = true
-    })
-
-    // Handle node position changes (drag)
-    if (onNodePositionChange) {
-      cyRef.current.on('dragfree', 'node', (event) => {
-        if (!mounted) return
-        const node = event.target
-        const nodeId = node.id()
-        const position = node.position()
-
-        console.log('🟡 dragfree event:', nodeId, 'position:', position)
-
-        // Save position
-        if (nodeId && position) {
-          console.log('🟡 Calling onNodePositionChange with:', { x: position.x, y: position.y })
-          onNodePositionChange(nodeId, position.x, position.y)
-        }
-
-        // Reset dragging flag after a delay to allow the API call to complete
-        setTimeout(() => {
-          console.log('🟢 Drag ended - setting isDraggingRef to false')
-          isDraggingRef.current = false
-        }, 500)
-      })
-    }
+    // Register event handlers
+    cyRef.current.on('mouseover', 'node[!type]', handleNodeMouseOver)
+    cyRef.current.on('mouseout', 'node[!type]', handleNodeMouseOut)
+    cyRef.current.on('mouseover', 'edge', handleEdgeMouseOver)
+    cyRef.current.on('mouseout', 'edge', handleEdgeMouseOut)
+    cyRef.current.on('cxttap', 'node[!type]', handleContextMenu)
+    cyRef.current.on('tap', handleBackgroundTap)
 
     return () => {
-      mounted = false
-      // Only remove listeners on dependency change, don't destroy graph
+      console.log('🔴 Cleaning up interactive event handlers')
       if (cyRef.current) {
         try {
-          cyRef.current.removeAllListeners()
+          cyRef.current.off('mouseover', 'node[!type]', handleNodeMouseOver)
+          cyRef.current.off('mouseout', 'node[!type]', handleNodeMouseOut)
+          cyRef.current.off('mouseover', 'edge', handleEdgeMouseOver)
+          cyRef.current.off('mouseout', 'edge', handleEdgeMouseOut)
+          cyRef.current.off('cxttap', 'node[!type]', handleContextMenu)
+          cyRef.current.off('tap', handleBackgroundTap)
         } catch (e) {
           // Ignore errors during cleanup
         }
       }
     }
-  }, [elements, onNodeClick, onRelationshipCreate, onNodePositionChange, members, centralityScores])
+  }, [members, centralityScores])
+
+  // Separate useEffect for relationship creation
+  useEffect(() => {
+    if (!cyRef.current || !onRelationshipCreate) return
+
+    console.log('🔵 Setting up edgehandles')
+
+    const eh = cyRef.current.edgehandles({
+      canConnect: function (sourceNode: any, targetNode: any) {
+        if (sourceNode.id() === targetNode.id()) return false
+        if (sourceNode.data('type') || targetNode.data('type')) return false
+        return true
+      },
+      edgeParams: function (sourceNode: any, targetNode: any) {
+        return {
+          data: {
+            source: sourceNode.id(),
+            target: targetNode.id(),
+          },
+          classes: 'eh-preview',
+        }
+      },
+      hoverDelay: 150,
+      snap: true,
+      snapThreshold: 50,
+      snapFrequency: 15,
+      noEdgeEventsInDraw: true,
+      disableBrowserGestures: true,
+    })
+
+    const handleEdgeComplete = (event: any, sourceNode: any, targetNode: any, addedEdge: any) => {
+      if (addedEdge) {
+        addedEdge.remove()
+      }
+
+      const sourceId = sourceNode.id()
+      const targetId = targetNode.id()
+
+      if (onRelationshipCreate) {
+        onRelationshipCreate(sourceId, targetId)
+      }
+    }
+
+    cyRef.current.on('ehcomplete', handleEdgeComplete)
+
+    return () => {
+      console.log('🔴 Cleaning up edgehandles')
+      if (cyRef.current) {
+        try {
+          cyRef.current.off('ehcomplete', handleEdgeComplete)
+        } catch (e) {
+          // Ignore errors during cleanup
+        }
+      }
+    }
+  }, [onRelationshipCreate])
+
+  // Separate useEffect for drag handlers
+  useEffect(() => {
+    if (!cyRef.current) return
+
+    console.log('🔵 Setting up drag handlers')
+
+    const handleGrab = () => {
+      console.log('🔴 Drag started - setting isDraggingRef to true')
+      isDraggingRef.current = true
+    }
+
+    const handleDragFree = (event: any) => {
+      if (!onNodePositionChange) return
+
+      const node = event.target
+      const nodeId = node.id()
+      const position = node.position()
+
+      console.log('🟡 dragfree event:', nodeId, 'position:', position)
+
+      if (nodeId && position) {
+        console.log('🟡 Calling onNodePositionChange with:', { x: position.x, y: position.y })
+        onNodePositionChange(nodeId, position.x, position.y)
+      }
+
+      setTimeout(() => {
+        console.log('🟢 Drag ended - setting isDraggingRef to false')
+        isDraggingRef.current = false
+      }, 500)
+    }
+
+    cyRef.current.on('grab', 'node', handleGrab)
+    if (onNodePositionChange) {
+      cyRef.current.on('dragfree', 'node', handleDragFree)
+    }
+
+    return () => {
+      console.log('🔴 Cleaning up drag handlers')
+      if (cyRef.current) {
+        try {
+          cyRef.current.off('grab', 'node', handleGrab)
+          if (onNodePositionChange) {
+            cyRef.current.off('dragfree', 'node', handleDragFree)
+          }
+        } catch (e) {
+          // Ignore errors during cleanup
+        }
+      }
+    }
+  }, [onNodePositionChange])
+
+  // Separate useEffect for node click handler
+  useEffect(() => {
+    if (!cyRef.current) return
+
+    console.log('🔵 Setting up node click handler')
+
+    const handleNodeTap = (event: any) => {
+      const nodeId = event.target.id()
+      console.log('🟢 NetworkGraph: Node clicked!', nodeId)
+      if (onNodeClick) {
+        onNodeClick(nodeId)
+      }
+    }
+
+    if (onNodeClick) {
+      cyRef.current.on('tap', 'node[!type]', handleNodeTap)
+    }
+
+    return () => {
+      console.log('🔴 Cleaning up node click handler')
+      if (cyRef.current) {
+        try {
+          if (onNodeClick) {
+            cyRef.current.off('tap', 'node[!type]', handleNodeTap)
+          }
+        } catch (e) {
+          // Ignore errors during cleanup
+        }
+      }
+    }
+  }, [onNodeClick])
 
   return (
     <>
