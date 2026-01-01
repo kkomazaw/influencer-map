@@ -1,26 +1,41 @@
 import { io, Socket } from 'socket.io-client'
 import { SocketEvent } from '@shared/types'
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+// Remove /api from the URL for Socket.io connection
+const SOCKET_URL = (import.meta.env.VITE_API_URL || 'http://localhost:4000').replace('/api', '')
 
 class SocketService {
   private socket: Socket | null = null
   private listeners: Map<string, Set<(data: unknown) => void>> = new Map()
 
   connect() {
-    if (this.socket?.connected) return
+    // Prevent creating multiple socket instances
+    if (this.socket) {
+      console.log('Socket already exists (connected:', this.socket.connected, ')')
+      return
+    }
+
+    console.log('Attempting to connect to Socket.io server at:', SOCKET_URL)
 
     this.socket = io(SOCKET_URL, {
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
       autoConnect: true,
     })
 
     this.socket.on('connect', () => {
-      console.log('Socket connected:', this.socket?.id)
+      console.log('✅ Socket connected successfully:', this.socket?.id)
     })
 
-    this.socket.on('disconnect', () => {
-      console.log('Socket disconnected')
+    this.socket.on('connect_error', (error) => {
+      console.error('❌ Socket connection error:', error.message)
+    })
+
+    this.socket.on('disconnect', (reason) => {
+      console.log('🔴 Socket disconnected:', reason)
+    })
+
+    this.socket.on('error', (error) => {
+      console.error('❌ Socket error:', error)
     })
 
     // Listen to all event types

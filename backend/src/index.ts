@@ -30,6 +30,8 @@ const io = new Server(httpServer, {
   }
 })
 
+console.log('✅ Socket.io server initialized with CORS origins:', allowedOrigins)
+
 const PORT = process.env.PORT || 4000
 
 // Make io available to routes

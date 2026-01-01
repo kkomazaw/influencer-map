@@ -76,43 +76,52 @@ const Dashboard: React.FC = () => {
 
     // Listen to real-time events
     socketService.on('member:created', (payload: unknown) => {
-      const data = payload as { data: Member }
-      addMember(data.data)
+      const member = payload as Member
+      console.log('📨 WebSocket: member:created', member)
+      addMember(member)
     })
     socketService.on('member:updated', (payload: unknown) => {
-      const data = payload as { data: Member }
+      const member = payload as Member
+      console.log('📨 WebSocket: member:updated', member)
       // Skip WebSocket updates for position changes - they're handled by optimistic updates
       // This prevents race conditions between optimistic updates and WebSocket events
       // Note: We'll still get the updated position on next page load from the server
     })
     socketService.on('member:deleted', (payload: unknown) => {
-      const data = payload as { data: { id: string } }
-      removeMember(data.data.id)
+      const data = payload as { id: string }
+      console.log('📨 WebSocket: member:deleted', data)
+      removeMember(data.id)
     })
     socketService.on('relationship:created', (payload: unknown) => {
-      const data = payload as { data: Relationship }
-      addRelationship(data.data)
+      const relationship = payload as Relationship
+      console.log('📨 WebSocket: relationship:created', relationship)
+      addRelationship(relationship)
     })
     socketService.on('relationship:updated', (payload: unknown) => {
-      const data = payload as { data: Relationship }
-      updateRelationship(data.data.id, data.data)
+      const relationship = payload as Relationship
+      console.log('📨 WebSocket: relationship:updated', relationship)
+      updateRelationship(relationship.id, relationship)
     })
     socketService.on('relationship:deleted', (payload: unknown) => {
-      const data = payload as { data: { id: string } }
-      removeRelationship(data.data.id)
+      const data = payload as { id: string }
+      console.log('📨 WebSocket: relationship:deleted', data)
+      removeRelationship(data.id)
     })
     socketService.on('group:created', (payload: unknown) => {
-      const data = payload as { data: Group }
-      addGroup(data.data)
+      const group = payload as Group
+      console.log('📨 WebSocket: group:created', group)
+      addGroup(group)
     })
     socketService.on('group:updated', (payload: unknown) => {
-      const data = payload as { data: Group }
+      const group = payload as Group
+      console.log('📨 WebSocket: group:updated', group)
       // Skip WebSocket updates for position changes - they're handled by optimistic updates
       // This prevents race conditions between optimistic updates and WebSocket events
     })
     socketService.on('group:deleted', (payload: unknown) => {
-      const data = payload as { data: { id: string } }
-      removeGroup(data.data.id)
+      const data = payload as { id: string }
+      console.log('📨 WebSocket: group:deleted', data)
+      removeGroup(data.id)
     })
 
     return () => {
@@ -297,9 +306,11 @@ const Dashboard: React.FC = () => {
             communities={communities}
             centralityScores={centralityResult?.scores}
             colorMode={colorMode}
+            selectedMemberId={selectedMemberId}
             onNodeClick={handleNodeClick}
             onNodeDelete={handleNodeDelete}
             onRelationshipCreate={handleRelationshipCreate}
+            onRelationshipDelete={deleteRelationship}
             onGraphReady={setCyInstance}
             onNodePositionChange={handleNodePositionChange}
           />

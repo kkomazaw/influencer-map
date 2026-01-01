@@ -26,9 +26,20 @@ export const authenticate = async (
   next: NextFunction
 ) => {
   try {
+    // 開発環境での認証バイパス
+    if (process.env.BYPASS_AUTH === 'true') {
+      console.log('Development mode: Bypassing authentication')
+      req.user = {
+        uid: 'dev-user',
+        email: 'dev@example.com',
+        name: 'Development User',
+      }
+      return next()
+    }
+
     // Authorizationヘッダーからトークンを取得
     const authHeader = req.headers.authorization
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
         success: false,
@@ -58,7 +69,7 @@ export const authenticate = async (
     next()
   } catch (error: any) {
     console.error('Authentication error:', error.message)
-    
+
     return res.status(401).json({
       success: false,
       error: 'Invalid or expired token.',

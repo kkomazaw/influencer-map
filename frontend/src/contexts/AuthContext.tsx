@@ -40,6 +40,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   useEffect(() => {
+    // 開発環境では認証をバイパス
+    if (import.meta.env.DEV && import.meta.env.VITE_BYPASS_AUTH === 'true') {
+      console.log('Development mode: Bypassing authentication')
+      // ダミーユーザーを設定
+      setUser({ uid: 'dev-user', email: 'dev@example.com' } as User)
+      setLoading(false)
+      setAuthTokenGetter(async () => 'dev-token')
+      return
+    }
+
     // 認証状態の監視
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user)
@@ -51,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // クリーンアップ
     return () => unsubscribe()
-  }, [user])
+  }, [])
 
   // Googleでサインイン
   const signInWithGoogle = async () => {

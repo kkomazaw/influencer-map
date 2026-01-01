@@ -15,9 +15,11 @@ interface NetworkGraphProps {
   communities?: Community[]
   centralityScores?: MemberCentralityScore[]
   colorMode?: ColorMode
+  selectedMemberId?: string | null
   onNodeClick?: (memberId: string) => void
   onNodeDelete?: (memberId: string) => void
   onRelationshipCreate?: (sourceId: string, targetId: string) => void
+  onRelationshipDelete?: (relationshipId: string) => void
   onGraphReady?: (cy: Core) => void
   onNodePositionChange?: (nodeId: string, x: number, y: number) => void
 }
@@ -113,15 +115,25 @@ const GRAPH_STYLESHEET = [
     },
   },
   {
+    selector: '.selected-for-edge',
+    style: {
+      'border-width': 4,
+      'border-color': '#4CAF50',
+      'border-opacity': 1,
+    },
+  },
+  {
     selector: '.eh-handle',
     style: {
-      'background-color': '#4CAF50',
-      width: 12,
-      height: 12,
+      'background-color': '#FF5722',
+      width: 40,
+      height: 40,
       shape: 'ellipse',
       'overlay-opacity': 0,
-      'border-width': 6,
-      'border-opacity': 0,
+      'border-width': 5,
+      'border-color': '#fff',
+      'border-opacity': 1,
+      'z-index': 9999,
     },
   },
   {
@@ -201,12 +213,21 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
   communities = [],
   centralityScores = [],
   colorMode = 'default',
+  selectedMemberId,
   onNodeClick,
   onNodeDelete,
   onRelationshipCreate,
+  onRelationshipDelete,
   onGraphReady,
   onNodePositionChange
 }) => {
+  console.log('🟣 NetworkGraph rendered with props:', {
+    selectedMemberId,
+    hasOnRelationshipCreate: !!onRelationshipCreate,
+    membersCount: members.length,
+    relationshipsCount: relationships.length,
+  })
+
   const containerRef = useRef<HTMLDivElement>(null)
   const cyRef = useRef<Core | null>(null)
   const layoutRef = useRef<any>(null)
@@ -628,7 +649,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
     }
 
     // Handle right-click on nodes (context menu)
-    const handleContextMenu = (event: any) => {
+    const handleNodeContextMenu = (event: any) => {
       const node = event.target
       const nodeId = node.id()
       const member = members.find((m) => m.id === nodeId)
@@ -646,6 +667,28 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
       setTooltip({ visible: false, x: 0, y: 0, content: null })
     }
 
+    // Handle right-click on edges (relationship context menu)
+    const handleEdgeContextMenu = (event: any) => {
+      if (!onRelationshipDelete) return
+
+      const edge = event.target
+      const relationshipId = edge.id()
+      const sourceId = edge.data('source')
+      const targetId = edge.data('target')
+      const type = edge.data('type')
+
+      const sourceMember = members.find((m) => m.id === sourceId)
+      const targetMember = members.find((m) => m.id === targetId)
+
+      if (!sourceMember || !targetMember) return
+
+      const position = event.renderedPosition
+
+      if (confirm(`「${sourceMember.name}」→「${targetMember.name}」の関係性を削除しますか？`)) {
+        onRelationshipDelete(relationshipId)
+      }
+    }
+
     // Close context menu on background click
     const handleBackgroundTap = (event: any) => {
       if (event.target === cyRef.current) {
@@ -658,7 +701,8 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
     cyRef.current.on('mouseout', 'node[!type]', handleNodeMouseOut)
     cyRef.current.on('mouseover', 'edge', handleEdgeMouseOver)
     cyRef.current.on('mouseout', 'edge', handleEdgeMouseOut)
-    cyRef.current.on('cxttap', 'node[!type]', handleContextMenu)
+    cyRef.current.on('cxttap', 'node[!type]', handleNodeContextMenu)
+    cyRef.current.on('cxttap', 'edge', handleEdgeContextMenu)
     cyRef.current.on('tap', handleBackgroundTap)
 
     return () => {
@@ -669,70 +713,108 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
           cyRef.current.off('mouseout', 'node[!type]', handleNodeMouseOut)
           cyRef.current.off('mouseover', 'edge', handleEdgeMouseOver)
           cyRef.current.off('mouseout', 'edge', handleEdgeMouseOut)
-          cyRef.current.off('cxttap', 'node[!type]', handleContextMenu)
+          cyRef.current.off('cxttap', 'node[!type]', handleNodeContextMenu)
+          cyRef.current.off('cxttap', 'edge', handleEdgeContextMenu)
           cyRef.current.off('tap', handleBackgroundTap)
         } catch (e) {
           // Ignore errors during cleanup
         }
       }
     }
-  }, [members, centralityScores])
+  }, [members, centralityScores, onRelationshipDelete])
 
-  // Separate useEffect for relationship creation
+  // Separate useEffect for selected node styling
   useEffect(() => {
-    if (!cyRef.current || !onRelationshipCreate) return
+    if (!cyRef.current) return
 
-    console.log('🔵 Setting up edgehandles')
+    console.log('🔵 Updating selected node class', selectedMemberId)
+
+    // Remove selected-for-edge class from all nodes
+    cyRef.current.$('node[!type]').removeClass('selected-for-edge')
+
+    // Add selected-for-edge class to the selected node
+    if (selectedMemberId) {
+      const selectedNode = cyRef.current.$id(selectedMemberId)
+      if (selectedNode.length > 0) {
+        selectedNode.addClass('selected-for-edge')
+      }
+    }
+  }, [selectedMemberId])
+
+  // Simplified edgehandles for relationship creation
+  useEffect(() => {
+    if (!cyRef.current || !onRelationshipCreate || !selectedMemberId) {
+      return
+    }
+
+    console.log('🔵 Setting up edgehandles for selected node:', selectedMemberId)
 
     const eh = cyRef.current.edgehandles({
-      canConnect: function (sourceNode: any, targetNode: any) {
-        if (sourceNode.id() === targetNode.id()) return false
-        if (sourceNode.data('type') || targetNode.data('type')) return false
-        return true
+      preview: true,
+      hoverDelay: 0,
+      handleNodes: `#${selectedMemberId}`, // Only show handle on selected node
+      handlePosition: () => 'right middle',
+      handleInDrawMode: false,
+      edgeType: () => 'flat',
+      loopAllowed: () => false,
+      canConnect: (sourceNode: any, targetNode: any) => {
+        return sourceNode.id() !== targetNode.id() && !targetNode.data('type')
       },
-      edgeParams: function (sourceNode: any, targetNode: any) {
-        return {
-          data: {
-            source: sourceNode.id(),
-            target: targetNode.id(),
-          },
-          classes: 'eh-preview',
-        }
-      },
-      hoverDelay: 150,
       snap: true,
       snapThreshold: 50,
-      snapFrequency: 15,
-      noEdgeEventsInDraw: true,
-      disableBrowserGestures: true,
     })
 
-    const handleEdgeComplete = (event: any, sourceNode: any, targetNode: any, addedEdge: any) => {
-      if (addedEdge) {
-        addedEdge.remove()
-      }
-
-      const sourceId = sourceNode.id()
-      const targetId = targetNode.id()
-
-      if (onRelationshipCreate) {
-        onRelationshipCreate(sourceId, targetId)
-      }
+    const handleComplete = (event: any, sourceNode: any, targetNode: any, addedEdge: any) => {
+      if (addedEdge) addedEdge.remove()
+      onRelationshipCreate(sourceNode.id(), targetNode.id())
+      // Clean up any preview edges
+      cleanupPreviewEdges()
     }
 
-    cyRef.current.on('ehcomplete', handleEdgeComplete)
+    const handleCancel = (event: any, sourceNode: any) => {
+      console.log('🔴 Edge creation cancelled')
+      // Clean up any preview edges
+      cleanupPreviewEdges()
+    }
+
+    const handleStop = () => {
+      console.log('🔴 Edge drawing stopped')
+      // Clean up any preview edges
+      cleanupPreviewEdges()
+    }
+
+    const cleanupPreviewEdges = () => {
+      if (!cyRef.current) return
+      // Remove all preview and ghost edges
+      cyRef.current.$('.eh-preview').remove()
+      cyRef.current.$('.eh-ghost-edge').remove()
+      cyRef.current.$('.eh-presumptive-target').removeClass('eh-presumptive-target')
+    }
+
+    cyRef.current.on('ehcomplete', handleComplete)
+    cyRef.current.on('ehcancel', handleCancel)
+    cyRef.current.on('ehstop', handleStop)
+
+    // Enable draw mode to show handles
+    eh.enableDrawMode()
+    console.log('🔵 Draw mode enabled')
 
     return () => {
-      console.log('🔴 Cleaning up edgehandles')
       if (cyRef.current) {
         try {
-          cyRef.current.off('ehcomplete', handleEdgeComplete)
+          cyRef.current.off('ehcomplete', handleComplete)
+          cyRef.current.off('ehcancel', handleCancel)
+          cyRef.current.off('ehstop', handleStop)
+          // Clean up any remaining preview edges
+          cleanupPreviewEdges()
+          eh.disableDrawMode()
+          eh.destroy()
         } catch (e) {
-          // Ignore errors during cleanup
+          // Ignore
         }
       }
     }
-  }, [onRelationshipCreate])
+  }, [onRelationshipCreate, selectedMemberId])
 
   // Separate useEffect for drag handlers
   useEffect(() => {

@@ -10,6 +10,16 @@ export class MemberController {
     mapId: string,
     userId: string
   ): Promise<{ authorized: boolean; error?: string }> {
+    // 開発環境での所有権チェックバイパス
+    if (process.env.BYPASS_AUTH === 'true') {
+      console.log('Development mode: Bypassing map ownership check')
+      const map = await mapService.getMapById(mapId)
+      if (!map) {
+        return { authorized: false, error: 'Map not found' }
+      }
+      return { authorized: true }
+    }
+
     const map = await mapService.getMapById(mapId)
 
     if (!map) {
