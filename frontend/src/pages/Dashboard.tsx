@@ -209,6 +209,31 @@ const Dashboard: React.FC = () => {
     setRelationshipDialog({ visible: false, sourceId: null, targetId: null })
   }
 
+  const handleBackgroundRightClick = async (x: number, y: number) => {
+    console.log('Background right-click at graph position:', { x, y })
+
+    if (!mapId) return
+
+    // Create a temporary member at the clicked position
+    try {
+      const tempMember = await createMember({
+        mapId,
+        name: '新しいメンバー',
+        email: 'temp@example.com',
+        x,
+        y,
+      })
+
+      // Switch to members tab and set the temporary member for editing
+      setActiveTab('members')
+      setEditingMember(tempMember)
+      setSelectedMemberId(tempMember.id)
+    } catch (error) {
+      console.error('Failed to create temporary member:', error)
+      alert('メンバーの作成に失敗しました。')
+    }
+  }
+
   const handleNodePositionChange = async (nodeId: string, x: number, y: number) => {
     console.log('handleNodePositionChange called:', nodeId, x, y)
     // Check if it's a group node (groups have prefix "group-")
@@ -311,6 +336,7 @@ const Dashboard: React.FC = () => {
             onNodeDelete={handleNodeDelete}
             onRelationshipCreate={handleRelationshipCreate}
             onRelationshipDelete={deleteRelationship}
+            onBackgroundRightClick={handleBackgroundRightClick}
             onGraphReady={setCyInstance}
             onNodePositionChange={handleNodePositionChange}
           />

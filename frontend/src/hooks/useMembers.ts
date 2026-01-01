@@ -97,7 +97,7 @@ export const useMembers = (mapId?: string) => {
   return {
     members,
     isLoading,
-    createMember: createMutation.mutate,
+    createMember: createMutation.mutateAsync,
     updateMember: (variables: { id: string; input: UpdateMemberInput }) => {
       console.log('🟣 updateMember wrapper called with:', variables)
       return updateMutation.mutate(variables)

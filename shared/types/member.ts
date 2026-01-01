@@ -21,6 +21,8 @@ export interface CreateMemberInput {
   department?: string
   position?: string
   avatarUrl?: string
+  x?: number
+  y?: number
 }
 
 export interface UpdateMemberInput {

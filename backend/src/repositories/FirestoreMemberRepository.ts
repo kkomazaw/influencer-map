@@ -34,6 +34,8 @@ export class FirestoreMemberRepository implements IMemberRepository {
       department: data.department,
       position: data.position,
       avatarUrl: data.avatarUrl,
+      x: data.x,
+      y: data.y,
       createdAt: now.toDate(),
       updatedAt: now.toDate(),
     }

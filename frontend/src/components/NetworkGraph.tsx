@@ -20,6 +20,7 @@ interface NetworkGraphProps {
   onNodeDelete?: (memberId: string) => void
   onRelationshipCreate?: (sourceId: string, targetId: string) => void
   onRelationshipDelete?: (relationshipId: string) => void
+  onBackgroundRightClick?: (x: number, y: number) => void
   onGraphReady?: (cy: Core) => void
   onNodePositionChange?: (nodeId: string, x: number, y: number) => void
 }
@@ -206,6 +207,14 @@ interface ContextMenuData {
   memberName: string | null
 }
 
+interface BackgroundContextMenuData {
+  visible: boolean
+  x: number
+  y: number
+  graphX: number
+  graphY: number
+}
+
 const NetworkGraph: React.FC<NetworkGraphProps> = ({
   members,
   relationships,
@@ -218,6 +227,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
   onNodeDelete,
   onRelationshipCreate,
   onRelationshipDelete,
+  onBackgroundRightClick,
   onGraphReady,
   onNodePositionChange
 }) => {
@@ -245,6 +255,13 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
     y: 0,
     memberId: null,
     memberName: null,
+  })
+  const [backgroundContextMenu, setBackgroundContextMenu] = useState<BackgroundContextMenuData>({
+    visible: false,
+    x: 0,
+    y: 0,
+    graphX: 0,
+    graphY: 0,
   })
 
   // Helper: Get department color
@@ -693,6 +710,25 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
     const handleBackgroundTap = (event: any) => {
       if (event.target === cyRef.current) {
         setContextMenu({ visible: false, x: 0, y: 0, memberId: null, memberName: null })
+        setBackgroundContextMenu({ visible: false, x: 0, y: 0, graphX: 0, graphY: 0 })
+      }
+    }
+
+    // Handle background right-click to show context menu
+    const handleBackgroundRightClick = (event: any) => {
+      if (event.target === cyRef.current) {
+        // Get the position in the graph coordinate system (not screen coordinates)
+        const graphPosition = event.position
+        const renderedPosition = event.renderedPosition
+        console.log('Background right-click at position:', graphPosition)
+        setBackgroundContextMenu({
+          visible: true,
+          x: renderedPosition.x,
+          y: renderedPosition.y,
+          graphX: graphPosition.x,
+          graphY: graphPosition.y,
+        })
+        setContextMenu({ visible: false, x: 0, y: 0, memberId: null, memberName: null })
       }
     }
 
@@ -704,6 +740,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
     cyRef.current.on('cxttap', 'node[!type]', handleNodeContextMenu)
     cyRef.current.on('cxttap', 'edge', handleEdgeContextMenu)
     cyRef.current.on('tap', handleBackgroundTap)
+    cyRef.current.on('cxttap', handleBackgroundRightClick)
 
     return () => {
       console.log('🔴 Cleaning up interactive event handlers')
@@ -716,12 +753,13 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
           cyRef.current.off('cxttap', 'node[!type]', handleNodeContextMenu)
           cyRef.current.off('cxttap', 'edge', handleEdgeContextMenu)
           cyRef.current.off('tap', handleBackgroundTap)
+          cyRef.current.off('cxttap', handleBackgroundRightClick)
         } catch (e) {
           // Ignore errors during cleanup
         }
       }
     }
-  }, [members, centralityScores, onRelationshipDelete])
+  }, [members, centralityScores, onRelationshipDelete, onBackgroundRightClick])
 
   // Separate useEffect for selected node styling
   useEffect(() => {
@@ -975,6 +1013,51 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
             }}
           >
             🗑️ 削除
+          </button>
+        </div>
+      )}
+      {backgroundContextMenu.visible && onBackgroundRightClick && (
+        <div
+          className="graph-context-menu"
+          style={{
+            position: 'absolute',
+            left: `${backgroundContextMenu.x}px`,
+            top: `${backgroundContextMenu.y}px`,
+            zIndex: 1001,
+            backgroundColor: '#2d2d2d',
+            border: '1px solid #444',
+            borderRadius: '4px',
+            padding: '4px 0',
+            minWidth: '150px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          }}
+        >
+          <button
+            className="context-menu-item"
+            onClick={() => {
+              if (onBackgroundRightClick) {
+                onBackgroundRightClick(backgroundContextMenu.graphX, backgroundContextMenu.graphY)
+              }
+              setBackgroundContextMenu({ visible: false, x: 0, y: 0, graphX: 0, graphY: 0 })
+            }}
+            style={{
+              width: '100%',
+              padding: '8px 16px',
+              border: 'none',
+              background: 'transparent',
+              color: '#4CAF50',
+              textAlign: 'left',
+              cursor: 'pointer',
+              fontSize: '14px',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#3d3d3d'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent'
+            }}
+          >
+            ➕ メンバーを追加
           </button>
         </div>
       )}
