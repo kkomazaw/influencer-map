@@ -30,24 +30,22 @@ const GRAPH_STYLESHEET = [
   {
     selector: 'node[type = "group"]',
     style: {
+      shape: 'ellipse',
       'background-color': 'data(color)',
-      'background-opacity': 0.1,
-      'border-width': 2,
+      'background-opacity': 0.08,
+      'border-width': 3,
       'border-style': 'dashed',
       'border-color': 'data(color)',
+      'border-opacity': 0.5,
       label: 'data(label)',
       'text-valign': 'top',
       'text-halign': 'center',
       'font-size': '14px',
       'font-weight': 'bold',
       color: 'data(color)',
-      'padding': '20px',
-    },
-  },
-  {
-    selector: 'node:parent',
-    style: {
-      'background-opacity': 0.1,
+      width: 'data(width)',
+      height: 'data(height)',
+      'z-index': 1,
     },
   },
   {
@@ -65,6 +63,7 @@ const GRAPH_STYLESHEET = [
       'border-width': 2,
       'border-color': '#fff',
       'border-opacity': 0.5,
+      'z-index': 10,
     },
   },
   {
@@ -357,23 +356,46 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
   // Memoize group nodes
   const groupNodes = useMemo((): ElementDefinition[] => {
     return groups.map((group) => {
+      // Calculate bounding box for group members
+      const groupMembers = members.filter((m) => group.memberIds.includes(m.id))
+
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+      let hasPositions = false
+
+      groupMembers.forEach((member) => {
+        if (member.x !== undefined && member.y !== undefined) {
+          hasPositions = true
+          minX = Math.min(minX, member.x)
+          maxX = Math.max(maxX, member.x)
+          minY = Math.min(minY, member.y)
+          maxY = Math.max(maxY, member.y)
+        }
+      })
+
+      // Calculate center and size with padding
+      const padding = 80
+      const width = hasPositions ? (maxX - minX) + padding * 2 : 300
+      const height = hasPositions ? (maxY - minY) + padding * 2 : 200
+      const centerX = hasPositions ? (minX + maxX) / 2 : group.x || 0
+      const centerY = hasPositions ? (minY + maxY) / 2 : group.y || 0
+
       const groupData: any = {
         data: {
           id: `group-${group.id}`,
           label: group.name,
           type: 'group',
           color: group.color,
+          width: width,
+          height: height,
         },
-      }
-
-      // If group has saved position, use it
-      if (group.x !== undefined && group.y !== undefined) {
-        groupData.position = { x: group.x, y: group.y }
+        position: { x: centerX, y: centerY },
+        locked: true, // Lock group nodes so they can't be dragged
+        grabbable: false, // Make group nodes non-grabbable
       }
 
       return groupData
     })
-  }, [groups])
+  }, [groups, members])
 
   // Memoize member nodes
   const memberNodes = useMemo(() => {
@@ -388,7 +410,6 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
         hasY: member.y !== undefined,
       })
 
-      const memberGroup = groups.find((g) => g.memberIds.includes(member.id))
       const avatarUrl = member.avatarUrl && member.avatarUrl.trim() !== '' ? member.avatarUrl : undefined
 
       const nodeData: any = {
@@ -397,7 +418,8 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
           label: member.name,
           department: member.department,
           position: member.position,
-          parent: memberGroup ? `group-${memberGroup.id}` : undefined,
+          // Removed parent assignment - members are now independent nodes
+          // This allows them to appear in overlapping groups
           nodeColor: getNodeColor(member),
           nodeSize: getNodeSize(member.id),
           avatarUrl: avatarUrl,
@@ -417,7 +439,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
 
     console.log('🟢 Built member nodes:', nodes.length)
     return nodes
-  }, [members, groups, colorMode, centralityScores, communities])
+  }, [members, colorMode, centralityScores, communities])
 
   // Memoize edges
   const edges = useMemo((): ElementDefinition[] => {
@@ -550,29 +572,39 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
         style: GRAPH_STYLESHEET as any,
       })
 
-      // Check if all nodes (not edges) have saved positions
-      const allNodesHavePositions = elements.every((ele: any) => {
+      // Check if all member nodes (not groups, not edges) have saved positions
+      const allMemberNodesHavePositions = elements.every((ele: any) => {
         // Skip edges (they have source and target)
         if (ele.data && (ele.data.source || ele.data.target)) {
           return true
         }
-        // For nodes, check if position is defined
+        // Skip group nodes - their positions are dynamically calculated
+        if (ele.data && ele.data.type === 'group') {
+          return true
+        }
+        // For member nodes, check if position is defined
         return ele.position !== undefined
       })
 
-      console.log('All nodes have positions?', allNodesHavePositions)
+      console.log('All member nodes have positions?', allMemberNodesHavePositions)
 
-      // Only run layout if nodes don't have saved positions
-      if (!allNodesHavePositions) {
-        console.log('Running layout because not all nodes have positions')
-        layoutRef.current = cyRef.current.layout(LAYOUT_CONFIG)
+      // Only run layout if member nodes don't have saved positions
+      if (!allMemberNodesHavePositions) {
+        console.log('Running layout because not all member nodes have positions')
+        // Run layout only on member nodes (exclude group nodes)
+        const layoutConfig = {
+          ...LAYOUT_CONFIG,
+          // Only apply layout to member nodes, not group nodes
+          eles: cyRef.current.$('node[!type]'),
+        }
+        layoutRef.current = cyRef.current.layout(layoutConfig)
 
         // Only run layout if still mounted
         if (mounted) {
           layoutRef.current.run()
         }
       } else {
-        console.log('Skipping layout because all nodes have saved positions')
+        console.log('Skipping layout because all member nodes have saved positions')
       }
 
       // Notify parent that graph is ready (only once)
