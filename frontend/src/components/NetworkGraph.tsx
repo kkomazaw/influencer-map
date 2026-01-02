@@ -443,6 +443,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
 
   // Memoize edges
   const edges = useMemo((): ElementDefinition[] => {
+    console.log('🟠 NetworkGraph: Building edges from relationships:', relationships.length)
     return relationships.map((rel) => ({
       data: {
         id: rel.id,

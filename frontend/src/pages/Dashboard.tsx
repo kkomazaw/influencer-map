@@ -189,6 +189,16 @@ const Dashboard: React.FC = () => {
   const handleRelationshipSubmit = async () => {
     if (!mapId || !relationshipDialog.sourceId || !relationshipDialog.targetId) return
 
+    console.log('🔴 Dashboard: handleRelationshipSubmit called')
+    console.log('🔴 Creating relationship:', {
+      mapId,
+      sourceId: relationshipDialog.sourceId,
+      targetId: relationshipDialog.targetId,
+      type: relationshipForm.type,
+      strength: relationshipForm.strength,
+      bidirectional: relationshipForm.bidirectional,
+    })
+
     try {
       await createRelationship({
         mapId,
@@ -198,9 +208,10 @@ const Dashboard: React.FC = () => {
         strength: relationshipForm.strength,
         bidirectional: relationshipForm.bidirectional,
       })
+      console.log('🟢 Dashboard: createRelationship completed')
       setRelationshipDialog({ visible: false, sourceId: null, targetId: null })
     } catch (error) {
-      console.error('Failed to create relationship:', error)
+      console.error('🔴 Dashboard: Failed to create relationship:', error)
       alert('関係性の作成に失敗しました。')
     }
   }

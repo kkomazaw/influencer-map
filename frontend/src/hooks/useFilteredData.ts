@@ -50,7 +50,8 @@ export const useFilteredData = (
 
   // Filter relationships
   const filteredRelationships = useMemo(() => {
-    return relationships.filter((relationship) => {
+    console.log('🟡 useFilteredData: Filtering relationships, input count:', relationships.length)
+    const filtered = relationships.filter((relationship) => {
       // Only include relationships where both members are in filtered set
       if (
         !filteredMemberIds.has(relationship.sourceId) ||
@@ -76,6 +77,9 @@ export const useFilteredData = (
 
       return true
     })
+
+    console.log('🟡 useFilteredData: Filtered relationships count:', filtered.length)
+    return filtered
   }, [filteredMemberIds, relationships, filters.relationshipTypes, filters.strengthRange])
 
   return {

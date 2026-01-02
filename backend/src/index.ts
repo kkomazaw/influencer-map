@@ -55,10 +55,12 @@ app.use(cors({
 app.use(express.json({ limit: '2mb' })) // Allow larger payloads for Base64 images
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'))
 
-// Rate limiting
+// Rate limiting - very relaxed for development
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 10000, // 10000 requests per minute (effectively unlimited for development)
+  standardHeaders: true,
+  legacyHeaders: false,
 })
 app.use('/api/', limiter)
 

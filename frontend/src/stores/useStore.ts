@@ -77,7 +77,26 @@ export const useStore = create<AppState>((set) => ({
 
   setRelationships: (relationships) => set({ relationships }),
   addRelationship: (relationship) =>
-    set((state) => ({ relationships: [...state.relationships, relationship] })),
+    set((state) => {
+      console.log('🟣 Store addRelationship called with:', relationship)
+      console.log('🟣 Current relationships count:', state.relationships.length)
+
+      // Prevent duplicates: check if relationship with same source, target, and type already exists
+      const isDuplicate = state.relationships.some(
+        (r) =>
+          r.sourceId === relationship.sourceId &&
+          r.targetId === relationship.targetId &&
+          r.type === relationship.type
+      )
+
+      if (isDuplicate) {
+        console.log('🟡 Store: Duplicate relationship detected, not adding')
+        return state
+      }
+
+      console.log('🟢 Store: Adding relationship to store')
+      return { relationships: [...state.relationships, relationship] }
+    }),
   updateRelationship: (id, relationship) =>
     set((state) => ({
       relationships: state.relationships.map((r) => (r.id === id ? relationship : r)),
