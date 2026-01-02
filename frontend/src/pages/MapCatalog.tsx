@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMaps } from '../hooks/useMaps'
 import { useAuth } from '../contexts/AuthContext'
+import { LogoutButton } from '../components/LogoutButton'
 import { CreateMapInput } from '@shared/types'
 
 const MapCatalog: React.FC = () => {
@@ -42,11 +43,18 @@ const MapCatalog: React.FC = () => {
   return (
     <div className="map-catalog">
       <header className="catalog-header">
-        <h1>Influencer Map</h1>
-        <p>組織関係性可視化ツール</p>
-        <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'キャンセル' : '+ 新しいマップを作成'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', width: '100%' }}>
+          <div>
+            <h1>Influencer Map</h1>
+            <p>組織関係性可視化ツール</p>
+          </div>
+          <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+            {showForm ? 'キャンセル' : '+ 新しいマップを作成'}
+          </button>
+          <div style={{ marginLeft: 'auto' }}>
+            <LogoutButton />
+          </div>
+        </div>
       </header>
 
       {showForm && (

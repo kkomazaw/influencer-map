@@ -14,11 +14,13 @@ import StatisticsPanel from '../components/StatisticsPanel'
 import MemberDetailStats from '../components/MemberDetailStats'
 import FilterPanel from '../components/FilterPanel'
 import ExportPanel from '../components/ExportPanel'
+import { LogoutButton } from '../components/LogoutButton'
 import { useMembers } from '../hooks/useMembers'
 import { useRelationships } from '../hooks/useRelationships'
 import { useGroups } from '../hooks/useGroups'
 import { useCommunities } from '../hooks/useCommunities'
 import { useFilteredData } from '../hooks/useFilteredData'
+import { useMap } from '../hooks/useMap'
 import { useStore } from '../stores/useStore'
 import { socketService } from '../services/socket'
 import { Member, Group, Relationship, CentralityAnalysisResult } from '@shared/types'
@@ -51,11 +53,15 @@ const Dashboard: React.FC = () => {
     bidirectional: false,
   })
 
+  const { map, updateMap: updateMapApi } = useMap(mapId)
   const { members, isLoading: membersLoading, createMember, updateMember: updateMemberApi, deleteMember, isCreating, isUpdating } = useMembers(mapId)
   const { relationships, isLoading: relsLoading, createRelationship, deleteRelationship, isCreating: isCreatingRel } = useRelationships(mapId)
   const { groups, isLoading: groupsLoading, createGroup, updateGroup: updateGroupApi, deleteGroup, isCreating: isCreatingGroup, isUpdating: isUpdatingGroup } = useGroups(mapId)
   const { data: communities = [], isLoading: communitiesLoading } = useCommunities(mapId || '')
   const { selectedMemberId, setSelectedMemberId, filters, addMember, updateMember, removeMember, addRelationship, updateRelationship, removeRelationship, addGroup, updateGroup, removeGroup } = useStore()
+
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [editedTitle, setEditedTitle] = useState('')
 
   // Apply filters to members and relationships
   const { filteredMembers, filteredRelationships } = useFilteredData(
@@ -265,6 +271,32 @@ const Dashboard: React.FC = () => {
     }
   }
 
+  const handleTitleClick = () => {
+    if (map) {
+      setEditedTitle(map.name)
+      setIsEditingTitle(true)
+    }
+  }
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditedTitle(e.target.value)
+  }
+
+  const handleTitleSubmit = () => {
+    if (editedTitle.trim() && editedTitle !== map?.name) {
+      updateMapApi({ name: editedTitle.trim() })
+    }
+    setIsEditingTitle(false)
+  }
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleTitleSubmit()
+    } else if (e.key === 'Escape') {
+      setIsEditingTitle(false)
+    }
+  }
+
   if (membersLoading || relsLoading || groupsLoading || communitiesLoading) {
     return (
       <div className="dashboard">
@@ -289,6 +321,54 @@ const Dashboard: React.FC = () => {
           <button className="btn-back" onClick={() => navigate('/')}>
             ← 戻る
           </button>
+
+          {/* Map Title */}
+          <div style={{ display: 'flex', alignItems: 'center', marginLeft: '16px' }}>
+            {isEditingTitle ? (
+              <input
+                type="text"
+                value={editedTitle}
+                onChange={handleTitleChange}
+                onKeyDown={handleTitleKeyDown}
+                onBlur={handleTitleSubmit}
+                autoFocus
+                style={{
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  color: '#fff',
+                  backgroundColor: '#2d2d2d',
+                  border: '2px solid #4CAF50',
+                  borderRadius: '4px',
+                  padding: '4px 8px',
+                  outline: 'none',
+                  minWidth: '200px',
+                }}
+              />
+            ) : (
+              <h1
+                onClick={handleTitleClick}
+                style={{
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  color: '#fff',
+                  margin: 0,
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  transition: 'background-color 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#2d2d2d'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                }}
+                title="クリックして編集"
+              >
+                {map?.name || 'マップ'}
+              </h1>
+            )}
+          </div>
 
           <div className="navbar-stats">
             <div className="stat-item">
@@ -321,6 +401,11 @@ const Dashboard: React.FC = () => {
               <span>フィルタ適用中</span>
             </div>
           )}
+
+          {/* Logout Button */}
+          <div style={{ marginLeft: 'auto' }}>
+            <LogoutButton />
+          </div>
         </div>
       </header>
 

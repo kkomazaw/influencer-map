@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { Login } from './pages/Login'
-import { LogoutButton } from './components/LogoutButton'
 import './styles/App.css'
 
 // Lazy load page components for code splitting
@@ -32,9 +31,6 @@ function AuthenticatedApp() {
   return (
     <Router>
       <div className="app">
-        <header className="app-header">
-          <LogoutButton />
-        </header>
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
             <Route path="/" element={<MapCatalog />} />
