@@ -126,20 +126,25 @@ const GRAPH_STYLESHEET = [
     selector: '.eh-handle',
     style: {
       'background-color': '#FF5722',
-      width: 40,
-      height: 40,
+      width: 50,
+      height: 50,
       shape: 'ellipse',
       'overlay-opacity': 0,
-      'border-width': 5,
+      'border-width': 6,
       'border-color': '#fff',
       'border-opacity': 1,
       'z-index': 9999,
+      'opacity': 1,
     },
   },
   {
     selector: '.eh-hover',
     style: {
-      'background-color': '#4CAF50',
+      'border-width': 4,
+      'border-color': '#4CAF50',
+      'border-opacity': 1,
+      width: 'data(nodeSize)',
+      height: 'data(nodeSize)',
     },
   },
   {
@@ -147,6 +152,8 @@ const GRAPH_STYLESHEET = [
     style: {
       'border-width': 4,
       'border-color': '#4CAF50',
+      width: 'data(nodeSize)',
+      height: 'data(nodeSize)',
     },
   },
   {
@@ -154,18 +161,87 @@ const GRAPH_STYLESHEET = [
     style: {
       'border-width': 4,
       'border-color': '#4CAF50',
+      width: 'data(nodeSize)',
+      height: 'data(nodeSize)',
     },
   },
   {
-    selector: '.eh-preview, .eh-ghost-edge',
+    selector: '.eh-preview',
     style: {
-      'background-color': '#4CAF50',
-      'line-color': '#4CAF50',
-      'target-arrow-color': '#4CAF50',
-      'source-arrow-color': '#4CAF50',
-      width: 3,
+      'line-color': '#FF5722',
+      'target-arrow-color': '#FF5722',
+      'target-arrow-shape': 'triangle',
+      'curve-style': 'bezier',
+      width: 4,
+      'line-style': 'solid',
+      'opacity': 0.8,
+      'z-index': 9999,
+    },
+  },
+  {
+    selector: '.eh-ghost-edge',
+    style: {
+      'line-color': '#FF5722',
+      'target-arrow-color': '#FF5722',
+      'target-arrow-shape': 'triangle',
+      'curve-style': 'bezier',
+      width: 4,
       'line-style': 'dashed',
-      'opacity': 0.7,
+      'opacity': 0.6,
+      'z-index': 9999,
+    },
+  },
+  // Avatar-specific styles - must be last to override edgehandles classes
+  {
+    selector: 'node[avatarUrl].eh-hover',
+    style: {
+      'background-image': 'data(avatarUrl)',
+      'background-fit': 'cover',
+      'background-clip': 'node',
+      'border-width': 5,
+      'border-color': '#4CAF50',
+      'border-opacity': 1,
+      width: 'data(nodeSize)',
+      height: 'data(nodeSize)',
+    },
+  },
+  {
+    selector: 'node[avatarUrl].eh-target',
+    style: {
+      'background-image': 'data(avatarUrl)',
+      'background-fit': 'cover',
+      'background-clip': 'node',
+      'border-width': 5,
+      'border-color': '#4CAF50',
+      'border-opacity': 1,
+      width: 'data(nodeSize)',
+      height: 'data(nodeSize)',
+    },
+  },
+  {
+    selector: 'node[avatarUrl].eh-source',
+    style: {
+      'background-image': 'data(avatarUrl)',
+      'background-fit': 'cover',
+      'background-clip': 'node',
+      'border-width': 5,
+      'border-color': '#4CAF50',
+      'border-opacity': 1,
+      width: 'data(nodeSize)',
+      height: 'data(nodeSize)',
+    },
+  },
+  {
+    selector: 'node[avatarUrl].eh-presumptive-target',
+    style: {
+      'background-image': 'data(avatarUrl)',
+      'background-fit': 'cover',
+      'background-clip': 'node',
+      'border-width': 5,
+      'border-color': '#4CAF50',
+      'border-opacity': 1,
+      width: 'data(nodeSize)',
+      height: 'data(nodeSize)',
     },
   },
 ]
@@ -387,10 +463,10 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
           color: group.color,
           width: width,
           height: height,
+          memberIds: group.memberIds, // Store member IDs for drag handling
         },
         position: { x: centerX, y: centerY },
-        locked: true, // Lock group nodes so they can't be dragged
-        grabbable: false, // Make group nodes non-grabbable
+        grabbable: true, // Allow group nodes to be dragged
       }
 
       return groupData
@@ -824,15 +900,33 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
       preview: true,
       hoverDelay: 0,
       handleNodes: `#${selectedMemberId}`, // Only show handle on selected node
-      handlePosition: () => 'right middle',
-      handleInDrawMode: false,
-      edgeType: () => 'flat',
-      loopAllowed: () => false,
+      handlePosition: (node: any) => {
+        console.log('🟢 handlePosition called for node:', node.id())
+        return 'right middle'
+      },
+      handleInDrawMode: true,
+      loopAllowed: (node: any) => {
+        console.log('🟢 loopAllowed called')
+        return false
+      },
       canConnect: (sourceNode: any, targetNode: any) => {
-        return sourceNode.id() !== targetNode.id() && !targetNode.data('type')
+        const canConnect = sourceNode.id() !== targetNode.id() && !targetNode.data('type')
+        console.log('🟢 canConnect:', sourceNode.id(), '->', targetNode?.id(), '=', canConnect)
+        return canConnect
       },
       snap: true,
       snapThreshold: 50,
+      edgeParams: (sourceNode: any, targetNode: any) => {
+        console.log('🟢 edgeParams called - source:', sourceNode?.id(), 'target:', targetNode?.id())
+        return {
+          data: {
+            source: sourceNode.id(),
+            target: targetNode?.id() || '',
+            edgeWidth: 4,
+            edgeColor: '#FF5722',
+          },
+        }
+      },
     })
 
     const handleComplete = (event: any, sourceNode: any, targetNode: any, addedEdge: any) => {
@@ -840,18 +934,27 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
       onRelationshipCreate(sourceNode.id(), targetNode.id())
       // Clean up any preview edges
       cleanupPreviewEdges()
+      // Reset dragging flag
+      console.log('🟢 Resetting isDraggingRef to false after edge complete')
+      isDraggingRef.current = false
     }
 
     const handleCancel = (event: any, sourceNode: any) => {
       console.log('🔴 Edge creation cancelled')
       // Clean up any preview edges
       cleanupPreviewEdges()
+      // Reset dragging flag
+      console.log('🟢 Resetting isDraggingRef to false after edge cancel')
+      isDraggingRef.current = false
     }
 
     const handleStop = () => {
       console.log('🔴 Edge drawing stopped')
       // Clean up any preview edges
       cleanupPreviewEdges()
+      // Reset dragging flag
+      console.log('🟢 Resetting isDraggingRef to false after edge drawing stopped')
+      isDraggingRef.current = false
     }
 
     const cleanupPreviewEdges = () => {
@@ -862,6 +965,11 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
       cyRef.current.$('.eh-presumptive-target').removeClass('eh-presumptive-target')
     }
 
+    const handleStart = (event: any, sourceNode: any) => {
+      console.log('🟢 Edge drawing started from:', sourceNode.id())
+    }
+
+    cyRef.current.on('ehstart', handleStart)
     cyRef.current.on('ehcomplete', handleComplete)
     cyRef.current.on('ehcancel', handleCancel)
     cyRef.current.on('ehstop', handleStop)
@@ -873,6 +981,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
     return () => {
       if (cyRef.current) {
         try {
+          cyRef.current.off('ehstart', handleStart)
           cyRef.current.off('ehcomplete', handleComplete)
           cyRef.current.off('ehcancel', handleCancel)
           cyRef.current.off('ehstop', handleStop)
@@ -893,9 +1002,76 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
 
     console.log('🔵 Setting up drag handlers')
 
-    const handleGrab = () => {
+    // Track initial positions for group drag (using plain object instead of useRef)
+    let groupDragState: {
+      groupId: string | null
+      initialGroupPos: { x: number; y: number } | null
+      initialMemberPositions: Map<string, { x: number; y: number }>
+    } = {
+      groupId: null,
+      initialGroupPos: null,
+      initialMemberPositions: new Map(),
+    }
+
+    const handleGrab = (event: any) => {
       console.log('🔴 Drag started - setting isDraggingRef to true')
       isDraggingRef.current = true
+
+      const node = event.target
+      const nodeId = node.id()
+
+      // Check if this is a group node
+      if (node.data('type') === 'group') {
+        const memberIds = node.data('memberIds') || []
+        const groupPos = node.position()
+
+        // Store initial positions
+        groupDragState.groupId = nodeId
+        groupDragState.initialGroupPos = { x: groupPos.x, y: groupPos.y }
+        groupDragState.initialMemberPositions.clear()
+
+        // Store initial positions of all member nodes
+        memberIds.forEach((memberId: string) => {
+          const memberNode = cyRef.current!.$id(memberId)
+          if (memberNode.length > 0) {
+            const memberPos = memberNode.position()
+            groupDragState.initialMemberPositions.set(memberId, {
+              x: memberPos.x,
+              y: memberPos.y
+            })
+          }
+        })
+
+        console.log('🟡 Group drag started:', nodeId, 'with', memberIds.length, 'members')
+      }
+    }
+
+    const handleDrag = (event: any) => {
+      const node = event.target
+      const nodeId = node.id()
+
+      // If dragging a group, move all member nodes
+      if (node.data('type') === 'group' && groupDragState.groupId === nodeId) {
+        const currentGroupPos = node.position()
+        const initialGroupPos = groupDragState.initialGroupPos
+
+        if (initialGroupPos) {
+          // Calculate delta
+          const deltaX = currentGroupPos.x - initialGroupPos.x
+          const deltaY = currentGroupPos.y - initialGroupPos.y
+
+          // Move all member nodes by the same delta
+          groupDragState.initialMemberPositions.forEach((initialPos, memberId) => {
+            const memberNode = cyRef.current!.$id(memberId)
+            if (memberNode.length > 0) {
+              memberNode.position({
+                x: initialPos.x + deltaX,
+                y: initialPos.y + deltaY,
+              })
+            }
+          })
+        }
+      }
     }
 
     const handleDragFree = (event: any) => {
@@ -907,7 +1083,30 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
 
       console.log('🟡 dragfree event:', nodeId, 'position:', position)
 
-      if (nodeId && position) {
+      // If this is a group node, save positions for group and all members
+      if (node.data('type') === 'group') {
+        const memberIds = node.data('memberIds') || []
+
+        // Save group position
+        onNodePositionChange(nodeId, position.x, position.y)
+
+        // Save all member positions
+        memberIds.forEach((memberId: string) => {
+          const memberNode = cyRef.current!.$id(memberId)
+          if (memberNode.length > 0) {
+            const memberPos = memberNode.position()
+            onNodePositionChange(memberId, memberPos.x, memberPos.y)
+          }
+        })
+
+        // Clear group drag state
+        groupDragState.groupId = null
+        groupDragState.initialGroupPos = null
+        groupDragState.initialMemberPositions.clear()
+
+        console.log('🟡 Group drag complete, saved positions for group and', memberIds.length, 'members')
+      } else if (nodeId && position) {
+        // Regular node drag
         console.log('🟡 Calling onNodePositionChange with:', { x: position.x, y: position.y })
         onNodePositionChange(nodeId, position.x, position.y)
       }
@@ -919,6 +1118,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
     }
 
     cyRef.current.on('grab', 'node', handleGrab)
+    cyRef.current.on('drag', 'node[type="group"]', handleDrag)
     if (onNodePositionChange) {
       cyRef.current.on('dragfree', 'node', handleDragFree)
     }
@@ -928,6 +1128,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
       if (cyRef.current) {
         try {
           cyRef.current.off('grab', 'node', handleGrab)
+          cyRef.current.off('drag', 'node[type="group"]', handleDrag)
           if (onNodePositionChange) {
             cyRef.current.off('dragfree', 'node', handleDragFree)
           }
